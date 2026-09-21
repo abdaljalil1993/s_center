@@ -33,6 +33,17 @@ const percentageSchema = z
   .refine((value) => /^\d+(?:\.\d{1,2})?$/.test(value), 'Invalid percentage')
   .refine((value) => Number(value) >= 0 && Number(value) <= 100, 'Percentage must be between 0 and 100');
 
+const optionalTeacherIdSchema = z.preprocess(
+  (value) => {
+    if (value === '' || value === undefined) {
+      return null;
+    }
+
+    return value;
+  },
+  z.coerce.number().int().positive().nullable(),
+);
+
 export const adminIdParamSchema = idParamSchema;
 
 export const specializationCreateSchema = z
@@ -54,7 +65,7 @@ export const courseCreateSchema = z
     price: positiveMoneySchema,
     is_published: z.boolean().optional(),
     sort_order: z.coerce.number().int().min(0).optional(),
-    teacher_id: z.coerce.number().int().positive().nullable().optional(),
+    teacher_id: optionalTeacherIdSchema.optional(),
     teacher_percent: percentageSchema.optional(),
   })
   .strict();

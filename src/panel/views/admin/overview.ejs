@@ -23,11 +23,15 @@
 <div class="panel-grid-2">
   <div class="panel-card">
     <h3 style="margin-top:0;">المبيعات اليومية</h3>
-    <canvas class="panel-chart" data-chart="line" data-chart-data='<%= JSON.stringify(salesChart) %>'></canvas>
+    <div class="panel-chart-wrap">
+      <canvas class="panel-chart" data-chart="line" data-chart-data='<%= JSON.stringify(salesChart) %>'></canvas>
+    </div>
   </div>
   <div class="panel-card">
     <h3 style="margin-top:0;">أعلى الكورسات</h3>
-    <canvas class="panel-chart" data-chart="bar" data-chart-data='<%= JSON.stringify(topCoursesChart) %>'></canvas>
+    <div class="panel-chart-wrap">
+      <canvas class="panel-chart" data-chart="bar" data-chart-data='<%= JSON.stringify(topCoursesChart) %>'></canvas>
+    </div>
   </div>
 </div>
 <div class="panel-card" style="margin-top:16px;">

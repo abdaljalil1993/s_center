@@ -371,9 +371,19 @@ textarea {
   font-size: 1.2rem;
 }
 
-.panel-chart {
+.panel-chart-wrap {
+  position: relative;
+  height: 320px;
+  min-height: 320px;
   width: 100%;
-  min-height: 260px;
+  overflow: hidden;
+}
+
+.panel-chart {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  max-height: 100%;
 }
 
 .panel-muted-block {

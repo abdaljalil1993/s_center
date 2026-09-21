@@ -56,8 +56,15 @@
     <div class="panel-modal-header"><h3>إضافة محاضرة</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
     <form method="post" action="/panel/admin/lectures" class="panel-form">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
-      <input type="hidden" name="course_id" value="<%= selectedCourseId || '' %>">
       <div class="panel-form-grid">
+        <div><label>الكورس</label>
+          <select name="course_id" required>
+            <option value="">اختر الكورس</option>
+            <% courses.forEach((course) => { %>
+              <option value="<%= course.id %>" <%= String(selectedCourseId) === String(course.id) ? 'selected' : '' %>><%= course.name %></option>
+            <% }) %>
+          </select>
+        </div>
         <div><label>العنوان</label><input name="title" required></div>
         <div><label>النوع</label>
           <select name="type">

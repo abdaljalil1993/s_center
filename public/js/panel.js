@@ -85,7 +85,10 @@
     new Chart(canvas, {
       type: chartType,
       data: parsed.data,
-      options: parsed.options || {},
+      options: {
+        maintainAspectRatio: false,
+        ...(parsed.options || {}),
+      },
     });
   });
 })();
