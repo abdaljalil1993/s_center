@@ -5,6 +5,7 @@ import { AppDataSource } from '../../config/data-source';
 import { env } from '../../config/env';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
+import { debugPanel } from '../debug';
 
 interface PanelTokenPayload {
   userId: number;
@@ -16,51 +17,57 @@ function redirectToLogin(res: Response) {
   return res.redirect('/panel/login');
 }
 
-export async function panelAuth(req: Request, res: Response, next: NextFunction) {
-  const token = req.cookies?.panel_token as string | undefined;
-  console.log('[PANELAUTH] Path:', req.path, 'Has token:', !!token);
+export function clearPanelAuthCookies(res: Response) {
+  res.clearCookie('panel_token', { path: '/panel' });
+}
+
+export async function resolvePanelUserFromToken(token: string | undefined) {
   if (!token) {
-    console.log('[PANELAUTH] No token, redirecting to login');
-    return redirectToLogin(res);
+    return null;
   }
 
   let payload: PanelTokenPayload;
   try {
     payload = jwt.verify(token, env.JWT_SECRET) as PanelTokenPayload;
-    console.log('[PANELAUTH] Token verified - UserId:', payload.userId, 'Role:', payload.role);
   } catch (error) {
-    console.error('[PANELAUTH] Token verification failed:', error instanceof Error ? error.message : error);
-    return redirectToLogin(res);
+    debugPanel('panelAuth invalid token', { error: error instanceof Error ? error.message : String(error) });
+    return null;
   }
 
   const user = await AppDataSource.getRepository(User).findOne({ where: { id: payload.userId } });
   if (!user || !user.isActive) {
-    console.log('[PANELAUTH] User not found or inactive');
-    return redirectToLogin(res);
+    debugPanel('panelAuth missing or inactive user', { userId: payload.userId });
+    return null;
   }
 
   if (user.role !== payload.role) {
-    console.log('[PANELAUTH] Role mismatch:', user.role, 'vs', payload.role);
+    debugPanel('panelAuth role mismatch', { tokenRole: payload.role, dbRole: user.role, userId: payload.userId });
+    return null;
+  }
+
+  if (user.role !== UserRole.ADMIN && user.role !== UserRole.TEACHER) {
+    debugPanel('panelAuth blocked non-panel role', { role: user.role, userId: user.id });
+    return null;
+  }
+
+  return user;
+}
+
+export async function panelAuth(req: Request, res: Response, next: NextFunction) {
+  const token = req.cookies?.panel_token as string | undefined;
+  if (!token) {
+    debugPanel('panelAuth missing token', { path: req.originalUrl });
     return redirectToLogin(res);
   }
 
-  if (user.role === UserRole.STUDENT) {
-    console.log('[PANELAUTH] Student role not allowed for panel');
+  const user = await resolvePanelUserFromToken(token);
+  if (!user) {
+    clearPanelAuthCookies(res);
     return redirectToLogin(res);
   }
 
-  if (req.path.startsWith('/admin') && user.role !== UserRole.ADMIN) {
-    console.log('[PANELAUTH] Non-admin accessing /admin path');
-    return redirectToLogin(res);
-  }
-
-  if (req.path.startsWith('/teacher') && user.role !== UserRole.TEACHER) {
-    console.log('[PANELAUTH] Non-teacher accessing /teacher path');
-    return redirectToLogin(res);
-  }
-
-  console.log('[PANELAUTH] Authentication successful for', user.username);
   req.user = user;
   res.locals.currentUser = user;
+  debugPanel('panelAuth success', { path: req.originalUrl, role: user.role, username: user.username, baseUrl: req.baseUrl, reqPath: req.path });
   next();
 }

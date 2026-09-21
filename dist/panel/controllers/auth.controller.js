@@ -7,14 +7,21 @@ exports.getPanelHome = getPanelHome;
 const service_1 = require("../../modules/auth/service");
 const enums_1 = require("../../entities/enums");
 const env_1 = require("../../config/env");
+const panelAuth_1 = require("../middlewares/panelAuth");
 function cookieSecureFlag() {
     return env_1.env.NODE_ENV === 'production';
 }
 async function getLogin(req, res) {
-    if (req.cookies?.panel_token) {
-        return res.redirect('/panel');
+    const token = req.cookies?.panel_token;
+    if (token) {
+        const user = await (0, panelAuth_1.resolvePanelUserFromToken)(token);
+        if (user) {
+            return res.redirect('/panel');
+        }
+        (0, panelAuth_1.clearPanelAuthCookies)(res);
     }
-    res.render('auth/login', { title: 'تسجيل الدخول' });
+    const csrfToken = res.locals.csrfToken || req.cookies?.panel_csrf_token || '';
+    res.render('auth/login', { title: 'تسجيل الدخول', csrfToken });
 }
 async function postLogin(req, res, next) {
     try {
@@ -29,27 +36,28 @@ async function postLogin(req, res, next) {
             path: '/panel',
             maxAge: 1000 * 60 * 60 * 24 * 7,
         });
-        return res.redirect(user.role === enums_1.UserRole.ADMIN ? '/panel/admin' : '/panel/teacher');
+        const redirectTo = user.role === enums_1.UserRole.ADMIN ? '/panel/admin/overview' : '/panel/teacher/courses';
+        return res.redirect(redirectTo);
     }
     catch (error) {
         return next(error);
     }
 }
 async function postLogout(req, res) {
-    res.clearCookie('panel_token', { path: '/panel' });
+    (0, panelAuth_1.clearPanelAuthCookies)(res);
     res.clearCookie('panel_csrf_token', { path: '/panel' });
     res.clearCookie('panel_flash', { path: '/panel' });
     return res.redirect('/panel/login');
 }
 async function getPanelHome(req, res) {
-    if (!req.cookies?.panel_token) {
+    if (!req.user) {
         return res.redirect('/panel/login');
     }
-    if (req.user?.role === enums_1.UserRole.ADMIN) {
-        return res.redirect('/panel/admin');
+    if (req.user.role === enums_1.UserRole.ADMIN) {
+        return res.redirect('/panel/admin/overview');
     }
-    if (req.user?.role === enums_1.UserRole.TEACHER) {
-        return res.redirect('/panel/teacher');
+    if (req.user.role === enums_1.UserRole.TEACHER) {
+        return res.redirect('/panel/teacher/courses');
     }
     return res.redirect('/panel/login');
 }

@@ -18,7 +18,6 @@ import { panelAdminRoutes } from './panel/routes/admin.routes';
 import { panelTeacherRoutes } from './panel/routes/teacher.routes';
 import { errorMiddleware } from './middlewares/error';
 import { generalRateLimit } from './middlewares/rateLimit';
-import { panelFlash } from './panel/middlewares/flash';
 import { csrfOrigin } from './panel/middlewares/csrfOrigin';
 
 export const app = express();
@@ -76,7 +75,7 @@ app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
 app.use(generalRateLimit);
-app.use('/public', express.static(path.resolve(process.cwd(), 'public')));
+app.use(express.static(path.resolve(process.cwd(), 'public')));
 
 app.get('/', (_req, res) => {
   res.redirect('/panel');
@@ -90,6 +89,8 @@ app.use('/api', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
 
-app.use('/panel', panelFlash, csrfOrigin, panelAuthRoutes, panelAdminRoutes, panelTeacherRoutes);
+app.use('/panel', csrfOrigin, panelAuthRoutes);
+app.use('/panel/admin', csrfOrigin, panelAdminRoutes);
+app.use('/panel/teacher', csrfOrigin, panelTeacherRoutes);
 
 app.use(errorMiddleware);

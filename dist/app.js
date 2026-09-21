@@ -6,7 +6,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.app = void 0;
 const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
-const helmet_1 = __importDefault(require("helmet"));
 const cookie_parser_1 = __importDefault(require("cookie-parser"));
 const fs_1 = __importDefault(require("fs"));
 const path_1 = __importDefault(require("path"));
@@ -23,7 +22,6 @@ const admin_routes_1 = require("./panel/routes/admin.routes");
 const teacher_routes_1 = require("./panel/routes/teacher.routes");
 const error_1 = require("./middlewares/error");
 const rateLimit_1 = require("./middlewares/rateLimit");
-const flash_1 = require("./panel/middlewares/flash");
 const csrfOrigin_1 = require("./panel/middlewares/csrfOrigin");
 exports.app = (0, express_1.default)();
 function resolveViewsPath() {
@@ -47,22 +45,24 @@ exports.app.set('views', resolveViewsPath());
 exports.app.locals.money = formatMoney;
 exports.app.locals.date = formatDate;
 exports.app.disable('x-powered-by');
-exports.app.use((0, helmet_1.default)({
-    contentSecurityPolicy: {
-        useDefaults: true,
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'"],
-            styleSrc: ["'self'"],
-            imgSrc: ["'self'", 'data:'],
-            fontSrc: ["'self'"],
-            connectSrc: ["'self'"],
-            objectSrc: ["'none'"],
-            baseUri: ["'self'"],
-            frameAncestors: ["'self'"],
-        },
-    },
-}));
+// app.use(
+//   helmet({
+//     contentSecurityPolicy: {
+//       useDefaults: true,
+//       directives: {
+//         defaultSrc: ["'self'"],
+//         scriptSrc: ["'self'"],
+//         styleSrc: ["'self'"],
+//         imgSrc: ["'self'", 'data:'],
+//         fontSrc: ["'self'"],
+//         connectSrc: ["'self'"],
+//         objectSrc: ["'none'"],
+//         baseUri: ["'self'"],
+//         frameAncestors: ["'self'"],
+//       },
+//     },
+//   }),
+// );
 exports.app.use((0, cors_1.default)({
     origin: env_1.env.CORS_ORIGINS,
     credentials: true,
@@ -71,7 +71,7 @@ exports.app.use((0, cookie_parser_1.default)());
 exports.app.use(express_1.default.json({ limit: '1mb' }));
 exports.app.use(express_1.default.urlencoded({ extended: false }));
 exports.app.use(rateLimit_1.generalRateLimit);
-exports.app.use('/public', express_1.default.static(path_1.default.resolve(process.cwd(), 'public')));
+exports.app.use(express_1.default.static(path_1.default.resolve(process.cwd(), 'public')));
 exports.app.get('/', (_req, res) => {
     res.redirect('/panel');
 });
@@ -82,5 +82,7 @@ exports.app.use('/api', routes_5.purchaseRoutes);
 exports.app.use('/api', routes_4.notificationsRoutes);
 exports.app.use('/api/admin', routes_1.adminRoutes);
 exports.app.use('/api/teacher', routes_7.teacherRoutes);
-exports.app.use('/panel', flash_1.panelFlash, csrfOrigin_1.csrfOrigin, auth_routes_1.panelAuthRoutes, admin_routes_1.panelAdminRoutes, teacher_routes_1.panelTeacherRoutes);
+exports.app.use('/panel', csrfOrigin_1.csrfOrigin, auth_routes_1.panelAuthRoutes);
+exports.app.use('/panel/admin', csrfOrigin_1.csrfOrigin, admin_routes_1.panelAdminRoutes);
+exports.app.use('/panel/teacher', csrfOrigin_1.csrfOrigin, teacher_routes_1.panelTeacherRoutes);
 exports.app.use(error_1.errorMiddleware);

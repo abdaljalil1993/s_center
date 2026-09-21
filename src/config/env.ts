@@ -19,6 +19,10 @@ const envSchema = z.object({
   CORS_ORIGINS: z.string().min(1),
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
+  DEBUG_PANEL: z
+    .string()
+    .optional()
+    .transform((value) => value === 'true'),
 });
 
 const parsed = envSchema.safeParse(process.env);

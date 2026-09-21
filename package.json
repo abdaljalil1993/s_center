@@ -9,6 +9,7 @@
     "start": "node dist/server.js",
     "seed:admin": "npm run build && node dist/seed-admin.js",
     "copy:panel-assets": "node scripts/copy-panel-assets.mjs",
+    "test:smoke": "ts-node scripts/smoke-test.ts",
     "postinstall": "node scripts/copy-panel-assets.mjs"
   },
   "dependencies": {

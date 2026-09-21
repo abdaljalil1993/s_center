@@ -1,0 +1,19 @@
+admin-root|/panel/admin|302|/panel/admin/overview Content-Type: text/plain; charset=utf-8 Content-Length: 43 Date: Mon, 21 Sep 2026 12:03:22 GMT Connection: keep-alive Keep-Alive: timeout=5  Found. Redirecting to /panel/admin/overview|-
+admin-overview|/panel/admin/overview|200||HTML
+admin-stats|/panel/admin/stats|302|/panel/admin/overview Content-Type: text/plain; charset=utf-8 Content-Length: 43 Date: Mon, 21 Sep 2026 12:03:22 GMT Connection: keep-alive Keep-Alive: timeout=5  Found. Redirecting to /panel/admin/overview|-
+admin-specializations|/panel/admin/specializations|200||HTML
+admin-courses|/panel/admin/courses|200||HTML
+admin-lectures|/panel/admin/lectures|200||HTML
+admin-topups|/panel/admin/topups|200||HTML
+admin-users|/panel/admin/users|200||HTML
+admin-teachers|/panel/admin/teachers|200||HTML
+admin-teacher-payouts|/panel/admin/teachers/2/payouts|200||HTML
+admin-notifications|/panel/admin/notifications|200||HTML
+teacher-root|/panel/teacher|302|/panel/teacher/courses Content-Type: text/plain; charset=utf-8 Content-Length: 44 Date: Mon, 21 Sep 2026 12:03:23 GMT Connection: keep-alive Keep-Alive: timeout=5  Found. Redirecting to /panel/teacher/courses|-
+teacher-courses|/panel/teacher/courses|200||HTML
+teacher-lectures|/panel/teacher/lectures|200||HTML
+teacher-earnings|/panel/teacher/earnings|200||HTML
+teacher-on-admin|/panel/admin/overview|200||-
+admin-on-teacher|/panel/teacher/courses|403||HTML
+login-valid-token|/panel/login|302|/panel Content-Type: text/plain; charset=utf-8 Content-Length: 28 Date: Mon, 21 Sep 2026 12:06:05 GMT Connection: keep-alive Keep-Alive: timeout=5  Found. Redirecting to /panel|-
+login-invalid-token|/panel/login|200||HTML

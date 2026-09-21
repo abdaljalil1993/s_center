@@ -20,6 +20,10 @@ const envSchema = zod_1.z.object({
     CORS_ORIGINS: zod_1.z.string().min(1),
     ADMIN_USERNAME: zod_1.z.string().optional(),
     ADMIN_PASSWORD: zod_1.z.string().optional(),
+    DEBUG_PANEL: zod_1.z
+        .string()
+        .optional()
+        .transform((value) => value === 'true'),
 });
 const parsed = envSchema.safeParse(process.env);
 if (!parsed.success) {

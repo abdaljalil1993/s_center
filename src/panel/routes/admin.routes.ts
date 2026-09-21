@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { UserRole } from '../../entities/enums';
 import { requireRole } from '../../middlewares/role';
 import { validate } from '../../middlewares/validate';
+import { asyncHandler } from '../../utils/asyncHandler';
 import {
 	adminIdParamSchema,
 	adjustBalanceSchema,
@@ -79,38 +80,38 @@ const panelNotificationSchema = z
 panelAdminRoutes.use(panelFlash, panelAuth, requireRole(UserRole.ADMIN));
 
 panelAdminRoutes.get('/', (_req, res) => res.redirect('/panel/admin/overview'));
-panelAdminRoutes.get('/overview', overviewPage);
+panelAdminRoutes.get('/overview', asyncHandler(overviewPage));
 panelAdminRoutes.get('/stats', statsRedirect);
 
-panelAdminRoutes.get('/specializations', specializationsPage);
-panelAdminRoutes.post('/specializations', validate({ body: specializationCreateSchema }), createSpecializationAction);
-panelAdminRoutes.post('/specializations/:id', validate({ params: adminIdParamSchema, body: specializationUpdateSchema }), updateSpecializationAction);
-panelAdminRoutes.post('/specializations/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), toggleSpecializationAction);
+panelAdminRoutes.get('/specializations', asyncHandler(specializationsPage));
+panelAdminRoutes.post('/specializations', validate({ body: specializationCreateSchema }), asyncHandler(createSpecializationAction));
+panelAdminRoutes.post('/specializations/:id', validate({ params: adminIdParamSchema, body: specializationUpdateSchema }), asyncHandler(updateSpecializationAction));
+panelAdminRoutes.post('/specializations/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), asyncHandler(toggleSpecializationAction));
 
-panelAdminRoutes.get('/courses', coursesPage);
-panelAdminRoutes.post('/courses', validate({ body: courseCreateSchema }), createCourseAction);
-panelAdminRoutes.post('/courses/:id', validate({ params: adminIdParamSchema, body: courseUpdateSchema }), updateCourseAction);
-panelAdminRoutes.post('/courses/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), toggleCourseAction);
+panelAdminRoutes.get('/courses', asyncHandler(coursesPage));
+panelAdminRoutes.post('/courses', validate({ body: courseCreateSchema }), asyncHandler(createCourseAction));
+panelAdminRoutes.post('/courses/:id', validate({ params: adminIdParamSchema, body: courseUpdateSchema }), asyncHandler(updateCourseAction));
+panelAdminRoutes.post('/courses/:id/toggle', validate({ params: adminIdParamSchema, body: togglePublishSchema }), asyncHandler(toggleCourseAction));
 
-panelAdminRoutes.get('/lectures', lecturesPage);
-panelAdminRoutes.post('/lectures', validate({ body: lectureCreateSchema }), createLectureAction);
-panelAdminRoutes.post('/lectures/:id', validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), updateLectureAction);
-panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), hideLectureAction);
+panelAdminRoutes.get('/lectures', asyncHandler(lecturesPage));
+panelAdminRoutes.post('/lectures', validate({ body: lectureCreateSchema }), asyncHandler(createLectureAction));
+panelAdminRoutes.post('/lectures/:id', validate({ params: adminIdParamSchema, body: lectureUpdateSchema }), asyncHandler(updateLectureAction));
+panelAdminRoutes.post('/lectures/:id/hide', validate({ params: adminIdParamSchema }), asyncHandler(hideLectureAction));
 
-panelAdminRoutes.get('/topups', validate({ query: topupRequestsQuerySchema }), topupsPage);
-panelAdminRoutes.post('/topups/:id/approve', validate({ params: adminIdParamSchema }), approveTopupAction);
-panelAdminRoutes.post('/topups/:id/reject', validate({ params: adminIdParamSchema, body: rejectTopupSchema }), rejectTopupAction);
+panelAdminRoutes.get('/topups', validate({ query: topupRequestsQuerySchema }), asyncHandler(topupsPage));
+panelAdminRoutes.post('/topups/:id/approve', validate({ params: adminIdParamSchema }), asyncHandler(approveTopupAction));
+panelAdminRoutes.post('/topups/:id/reject', validate({ params: adminIdParamSchema, body: rejectTopupSchema }), asyncHandler(rejectTopupAction));
 
-panelAdminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), usersPage);
-panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), toggleUserActiveAction);
-panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), resetUserDeviceAction);
-panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), resetUserPasswordAction);
-panelAdminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), adjustUserBalanceAction);
+panelAdminRoutes.get('/users', validate({ query: adminUsersQuerySchema }), asyncHandler(usersPage));
+panelAdminRoutes.post('/users/:id/active', validate({ params: adminIdParamSchema, body: activeUserSchema }), asyncHandler(toggleUserActiveAction));
+panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParamSchema }), asyncHandler(resetUserDeviceAction));
+panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));
+panelAdminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), asyncHandler(adjustUserBalanceAction));
 
-panelAdminRoutes.get('/teachers', teachersPage);
-panelAdminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), createTeacherAction);
-panelAdminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), teacherPayoutAction);
-panelAdminRoutes.get('/teachers/:id/payouts', validate({ params: adminIdParamSchema }), teacherPayoutsPage);
+panelAdminRoutes.get('/teachers', asyncHandler(teachersPage));
+panelAdminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), asyncHandler(createTeacherAction));
+panelAdminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), asyncHandler(teacherPayoutAction));
+panelAdminRoutes.get('/teachers/:id/payouts', validate({ params: adminIdParamSchema }), asyncHandler(teacherPayoutsPage));
 
-panelAdminRoutes.get('/notifications', notificationsPage);
-panelAdminRoutes.post('/notifications', validate({ body: panelNotificationSchema }), sendNotificationAction);
+panelAdminRoutes.get('/notifications', asyncHandler(notificationsPage));
+panelAdminRoutes.post('/notifications', validate({ body: panelNotificationSchema }), asyncHandler(sendNotificationAction));

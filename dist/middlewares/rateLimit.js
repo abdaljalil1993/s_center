@@ -13,7 +13,7 @@ exports.generalRateLimit = (0, express_rate_limit_1.default)({
 });
 exports.authRateLimit = (0, express_rate_limit_1.default)({
     windowMs: 15 * 60 * 1000,
-    limit: 10,
+    limit: 50,
     standardHeaders: true,
     legacyHeaders: false,
 });
