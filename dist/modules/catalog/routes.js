@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.catalogRoutes = void 0;
+const express_1 = require("express");
+const auth_1 = require("../../middlewares/auth");
+const validate_1 = require("../../middlewares/validate");
+const schemas_1 = require("./schemas");
+const controller_1 = require("./controller");
+exports.catalogRoutes = (0, express_1.Router)();
+exports.catalogRoutes.get('/specializations', auth_1.authMiddleware, controller_1.getSpecializations);
+exports.catalogRoutes.get('/courses', auth_1.authMiddleware, (0, validate_1.validate)({ query: schemas_1.coursesQuerySchema }), controller_1.getCourses);
+exports.catalogRoutes.get('/courses/:id/lectures', auth_1.authMiddleware, (0, validate_1.validate)({ params: schemas_1.courseIdParamSchema }), controller_1.getLectures);

@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.walletRoutes = void 0;
+const express_1 = require("express");
+const auth_1 = require("../../middlewares/auth");
+const validate_1 = require("../../middlewares/validate");
+const schemas_1 = require("./schemas");
+const controller_1 = require("./controller");
+exports.walletRoutes = (0, express_1.Router)();
+exports.walletRoutes.get('/', auth_1.authMiddleware, controller_1.wallet);
+exports.walletRoutes.get('/transactions', auth_1.authMiddleware, (0, validate_1.validate)({ query: schemas_1.walletPaginationSchema }), controller_1.transactions);
+exports.walletRoutes.post('/topup-requests', auth_1.authMiddleware, (0, validate_1.validate)({ body: schemas_1.topupRequestSchema }), controller_1.createTopup);
+exports.walletRoutes.get('/topup-requests', auth_1.authMiddleware, (0, validate_1.validate)({ query: schemas_1.walletPaginationSchema }), controller_1.topupRequests);

@@ -1,0 +1,453 @@
+@baseUrl = http://localhost:3000/api
+
+@studentToken = PasteStudentTokenHere
+@teacherToken = PasteTeacherTokenHere
+@adminToken = PasteAdminTokenHere
+
+@specializationId = 1
+@courseId = 1
+@lectureId = 1
+@topupRequestId = 1
+@notificationId = 1
+@userId = 1
+@teacherId = 1
+
+### Auth
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "student_1",
+  "full_name": "Student One",
+  "password": "password123",
+  "device_id": "device-001"
+}
+
+###
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "student_1",
+  "password": "password123",
+  "device_id": "device-001"
+}
+
+###
+GET {{baseUrl}}/auth/me
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/auth/change-password
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "old_password": "password123",
+  "new_password": "newpassword123"
+}
+
+### Student Catalog
+GET {{baseUrl}}/specializations
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/courses?specializationId={{specializationId}}&year=1
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/courses/{{courseId}}/lectures
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+### Wallet
+GET {{baseUrl}}/wallet
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/wallet/transactions?limit=20&offset=0
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/wallet/topup-requests
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": "50.00",
+  "method": "SHAM_CASH",
+  "reference_number": "TXN-10001",
+  "sender_name": "Student One",
+  "note": "Cash top-up request"
+}
+
+###
+GET {{baseUrl}}/wallet/topup-requests?limit=20&offset=0
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+### Purchase
+POST {{baseUrl}}/courses/{{courseId}}/purchase
+Authorization: Bearer {{studentToken}}
+Content-Type: application/json
+Accept: application/json
+
+{}
+
+###
+GET {{baseUrl}}/me/courses
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/me/payments
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+### Notifications
+GET {{baseUrl}}/notifications?limit=20&offset=0
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+###
+PATCH {{baseUrl}}/notifications/read-all
+Authorization: Bearer {{studentToken}}
+Accept: application/json
+
+### Admin - Specializations
+GET {{baseUrl}}/admin/specializations
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/specializations
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Computer Science",
+  "is_published": true,
+  "sort_order": 1
+}
+
+###
+PATCH {{baseUrl}}/admin/specializations/{{specializationId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "name": "Computer Science Updated",
+  "is_published": true,
+  "sort_order": 2
+}
+
+###
+DELETE {{baseUrl}}/admin/specializations/{{specializationId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Admin - Courses
+GET {{baseUrl}}/admin/courses
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/courses
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "specialization_id": 1,
+  "teacher_id": 1,
+  "teacher_percent": "12.50",
+  "year": 1,
+  "name": "Intro to Programming",
+  "description": "Course description",
+  "price": "75.00",
+  "is_published": true,
+  "sort_order": 1
+}
+
+###
+PATCH {{baseUrl}}/admin/courses/{{courseId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "teacher_id": 1,
+  "teacher_percent": "15.00",
+  "name": "Intro to Programming Updated",
+  "description": "Updated description",
+  "price": "80.00",
+  "is_published": true,
+  "sort_order": 2
+}
+
+###
+DELETE {{baseUrl}}/admin/courses/{{courseId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Admin - Lectures
+GET {{baseUrl}}/admin/lectures
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/lectures
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "course_id": 1,
+  "title": "Lecture 1",
+  "type": "VIDEO",
+  "url": "https://example.com/video-1",
+  "content": null,
+  "is_published": true,
+  "sort_order": 1
+}
+
+###
+PATCH {{baseUrl}}/admin/lectures/{{lectureId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Lecture 1 Updated",
+  "type": "TEXT",
+  "url": null,
+  "content": "Lecture text content",
+  "is_published": true,
+  "sort_order": 2
+}
+
+###
+DELETE {{baseUrl}}/admin/lectures/{{lectureId}}
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Admin - Top-up Requests
+GET {{baseUrl}}/admin/topup-requests?status=PENDING
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/topup-requests/{{topupRequestId}}/approve
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/topup-requests/{{topupRequestId}}/reject
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "reason": "Reference number is invalid"
+}
+
+### Admin - Users
+GET {{baseUrl}}/admin/users?search=student
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+PATCH {{baseUrl}}/admin/users/{{userId}}/active
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "is_active": true
+}
+
+###
+POST {{baseUrl}}/admin/users/{{userId}}/reset-device
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/users/{{userId}}/adjust-balance
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": "25.00",
+  "description": "Manual correction"
+}
+
+###
+POST {{baseUrl}}/admin/users/{{userId}}/reset-password
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "new_password": "NewPassword123"
+}
+
+### Admin - Teachers
+POST {{baseUrl}}/admin/teachers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "teacher_1",
+  "full_name": "Teacher One",
+  "password": "password123"
+}
+
+###
+GET {{baseUrl}}/admin/teachers
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/admin/teachers/{{teacherId}}/payouts
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "amount": "20.00",
+  "note": "Monthly payout"
+}
+
+###
+GET {{baseUrl}}/admin/teachers/{{teacherId}}/payouts
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Admin - Notifications
+POST {{baseUrl}}/admin/notifications
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "all": true,
+  "title": "System Notice",
+  "body": "Welcome to Student Bot"
+}
+
+###
+POST {{baseUrl}}/admin/notifications
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "user_id": 1,
+  "title": "Personal Notice",
+  "body": "Your request was processed"
+}
+
+### Admin - Stats
+GET {{baseUrl}}/admin/stats/overview
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/admin/stats/sales?days=30
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/admin/stats/top-courses?limit=10
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/admin/stats/by-specialization
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/admin/stats/teachers
+Authorization: Bearer {{adminToken}}
+Accept: application/json
+
+### Teacher - Auth
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "username": "teacher_1",
+  "password": "password123"
+}
+
+### Teacher - Courses
+GET {{baseUrl}}/teacher/courses
+Authorization: Bearer {{teacherToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/teacher/courses/{{courseId}}/lectures
+Authorization: Bearer {{teacherToken}}
+Accept: application/json
+
+###
+POST {{baseUrl}}/teacher/courses/{{courseId}}/lectures
+Authorization: Bearer {{teacherToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Teacher Lecture 1",
+  "type": "TEXT",
+  "content": "Lesson content",
+  "sort_order": 1
+}
+
+###
+PATCH {{baseUrl}}/teacher/lectures/{{lectureId}}
+Authorization: Bearer {{teacherToken}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "title": "Teacher Lecture 1 Updated",
+  "type": "PDF",
+  "url": "https://example.com/lesson.pdf",
+  "content": null,
+  "sort_order": 2
+}
+
+###
+DELETE {{baseUrl}}/teacher/lectures/{{lectureId}}
+Authorization: Bearer {{teacherToken}}
+Accept: application/json
+
+### Teacher - Stats
+GET {{baseUrl}}/teacher/stats
+Authorization: Bearer {{teacherToken}}
+Accept: application/json
+
+###
+GET {{baseUrl}}/teacher/payouts
+Authorization: Bearer {{teacherToken}}
+Accept: application/json

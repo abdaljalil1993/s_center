@@ -1,0 +1,8 @@
+<%- include('layout/header', { title: 'حدث خطأ' }) %>
+<%- include('layout/sidebar', { currentUser: null, csrfToken: '' }) %>
+<div class="panel-card">
+  <h1>حدث خطأ</h1>
+  <p class="panel-muted">تعذر إكمال العملية. حاول مرة أخرى لاحقًا.</p>
+  <a class="panel-btn panel-btn-primary" href="/panel/login">العودة إلى تسجيل الدخول</a>
+</div>
+<%- include('layout/footer') %>

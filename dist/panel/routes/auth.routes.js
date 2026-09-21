@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.panelAuthRoutes = void 0;
+const express_1 = require("express");
+const rateLimit_1 = require("../../middlewares/rateLimit");
+const flash_1 = require("../middlewares/flash");
+const auth_controller_1 = require("../controllers/auth.controller");
+exports.panelAuthRoutes = (0, express_1.Router)();
+exports.panelAuthRoutes.get('/', flash_1.panelFlash, auth_controller_1.getPanelHome);
+exports.panelAuthRoutes.get('/login', flash_1.panelFlash, auth_controller_1.getLogin);
+exports.panelAuthRoutes.post('/login', rateLimit_1.authRateLimit, flash_1.panelFlash, auth_controller_1.postLogin);
+exports.panelAuthRoutes.post('/logout', flash_1.panelFlash, auth_controller_1.postLogout);

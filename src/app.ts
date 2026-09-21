@@ -1,0 +1,95 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
+import fs from 'fs';
+import path from 'path';
+
+import { env } from './config/env';
+import { adminRoutes } from './modules/admin/routes';
+import { authRoutes } from './modules/auth/routes';
+import { catalogRoutes } from './modules/catalog/routes';
+import { notificationsRoutes } from './modules/notifications/routes';
+import { purchaseRoutes } from './modules/purchase/routes';
+import { walletRoutes } from './modules/wallet/routes';
+import { teacherRoutes } from './modules/teacher/routes';
+import { panelAuthRoutes } from './panel/routes/auth.routes';
+import { panelAdminRoutes } from './panel/routes/admin.routes';
+import { panelTeacherRoutes } from './panel/routes/teacher.routes';
+import { errorMiddleware } from './middlewares/error';
+import { generalRateLimit } from './middlewares/rateLimit';
+import { panelFlash } from './panel/middlewares/flash';
+import { csrfOrigin } from './panel/middlewares/csrfOrigin';
+
+export const app = express();
+
+function resolveViewsPath() {
+  const distViews = path.resolve(process.cwd(), 'dist', 'panel', 'views');
+  const srcViews = path.resolve(process.cwd(), 'src', 'panel', 'views');
+  return fs.existsSync(distViews) ? distViews : srcViews;
+}
+
+function formatMoney(value: unknown) {
+  const number = typeof value === 'bigint' ? Number(value) : Number(value ?? 0);
+  return new Intl.NumberFormat('ar-SY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(Number.isFinite(number) ? number : 0);
+}
+
+function formatDate(value: unknown) {
+  const date = value instanceof Date ? value : new Date(value as string | number);
+  if (Number.isNaN(date.getTime())) {
+    return '-';
+  }
+  return new Intl.DateTimeFormat('ar', { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+}
+
+app.set('view engine', 'ejs');
+app.set('views', resolveViewsPath());
+app.locals.money = formatMoney;
+app.locals.date = formatDate;
+
+app.disable('x-powered-by');
+// app.use(
+//   helmet({
+//     contentSecurityPolicy: {
+//       useDefaults: true,
+//       directives: {
+//         defaultSrc: ["'self'"],
+//         scriptSrc: ["'self'"],
+//         styleSrc: ["'self'"],
+//         imgSrc: ["'self'", 'data:'],
+//         fontSrc: ["'self'"],
+//         connectSrc: ["'self'"],
+//         objectSrc: ["'none'"],
+//         baseUri: ["'self'"],
+//         frameAncestors: ["'self'"],
+//       },
+//     },
+//   }),
+// );
+app.use(
+  cors({
+    origin: env.CORS_ORIGINS,
+    credentials: true,
+  }),
+);
+app.use(cookieParser());
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: false }));
+app.use(generalRateLimit);
+app.use('/public', express.static(path.resolve(process.cwd(), 'public')));
+
+app.get('/', (_req, res) => {
+  res.redirect('/panel');
+});
+
+app.use('/api/auth', authRoutes);
+app.use('/api', catalogRoutes);
+app.use('/api', walletRoutes);
+app.use('/api', purchaseRoutes);
+app.use('/api', notificationsRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/teacher', teacherRoutes);
+
+app.use('/panel', panelFlash, csrfOrigin, panelAuthRoutes, panelAdminRoutes, panelTeacherRoutes);
+
+app.use(errorMiddleware);

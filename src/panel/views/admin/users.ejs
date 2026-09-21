@@ -1,0 +1,76 @@
+<%- include('../layout/header', { title: 'المستخدمون' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">المستخدمون</h1>
+  </div>
+  <form method="get" action="/panel/admin/users">
+    <input type="text" name="search" placeholder="بحث" value="<%= search || '' %>">
+    <button class="panel-btn panel-btn-secondary" type="submit">بحث</button>
+  </form>
+</div>
+<div class="panel-table">
+  <table>
+    <thead>
+      <tr>
+        <th>اسم المستخدم</th>
+        <th>الاسم الكامل</th>
+        <th>الدور</th>
+        <th>الحالة</th>
+        <th>الرصيد</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach((item) => { %>
+        <tr>
+          <td><%= item.username %></td>
+          <td><%= item.full_name %></td>
+          <td><%= item.role %></td>
+          <td><%= item.is_active ? 'نشط' : 'موقوف' %></td>
+          <td><%= money(item.balance) %></td>
+          <td>
+            <form method="post" action="/panel/admin/users/<%= item.id %>/active" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <input type="hidden" name="is_active" value="<%= item.is_active ? 'false' : 'true' %>">
+              <button class="panel-btn panel-btn-secondary" type="submit"><%= item.is_active ? 'إيقاف' : 'تفعيل' %></button>
+            </form>
+            <form method="post" action="/panel/admin/users/<%= item.id %>/reset-device" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد تصفير الجهاز لهذا المستخدم؟">Reset Device</button>
+            </form>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>Reset Password</button>
+            <button class="panel-btn panel-btn-secondary" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<div class="panel-modal" id="user-reset-password-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>إعادة تعيين كلمة المرور</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/users/0/reset-password" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>كلمة المرور الجديدة</label><input name="new_password" type="password" required></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
+    </form>
+  </div>
+</div>
+<div class="panel-modal" id="user-adjust-balance-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>تعديل الرصيد</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/users/0/adjust-balance" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>المبلغ</label><input name="amount" type="text" required></div>
+        <div><label>الوصف</label><input name="description" type="text" required></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-primary" type="submit">حفظ</button></div>
+    </form>
+  </div>
+</div>
+<%- include('../layout/footer') %>

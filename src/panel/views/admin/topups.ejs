@@ -1,0 +1,65 @@
+<%- include('../layout/header', { title: 'طلبات الشحن' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken, pendingTopupsCount }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">طلبات الشحن</h1>
+    <p class="panel-muted" style="margin:6px 0 0;">مراجعة طلبات الطلاب</p>
+  </div>
+  <div class="panel-tabs">
+    <a class="panel-tab <%= status === 'PENDING' ? 'active' : '' %>" href="/panel/admin/topups?status=PENDING">قيد الانتظار</a>
+    <a class="panel-tab <%= status === 'APPROVED' ? 'active' : '' %>" href="/panel/admin/topups?status=APPROVED">موافق عليها</a>
+    <a class="panel-tab <%= status === 'REJECTED' ? 'active' : '' %>" href="/panel/admin/topups?status=REJECTED">مرفوضة</a>
+  </div>
+</div>
+<div class="panel-table">
+  <table>
+    <thead>
+      <tr>
+        <th>الطالب</th>
+        <th>المبلغ</th>
+        <th>الطريقة</th>
+        <th>الرقم المرجعي</th>
+        <th>اسم المرسل</th>
+        <th>ملاحظة</th>
+        <th>الحالة</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% requests.forEach((item) => { %>
+        <tr>
+          <td><%= item.username %> - <%= item.full_name %></td>
+          <td><%= money(item.amount) %></td>
+          <td><%= item.method %></td>
+          <td><%= item.reference_number %></td>
+          <td><%= item.sender_name %></td>
+          <td><%= item.note || '-' %></td>
+          <td><%= item.status %></td>
+          <td>
+            <% if (item.status === 'PENDING') { %>
+              <form method="post" action="/panel/admin/topups/<%= item.id %>/approve" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                <button class="panel-btn panel-btn-primary" type="submit" data-confirm="هل تريد الموافقة على هذا الطلب؟">موافقة</button>
+              </form>
+              <button class="panel-btn panel-btn-secondary" data-modal-open="topup-reject-modal" data-modal-action="/panel/admin/topups/<%= item.id %>/reject" data-modal-fill='<%= JSON.stringify(item) %>'>رفض</button>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<div class="panel-modal" id="topup-reject-modal">
+  <div class="panel-modal-content">
+    <div class="panel-modal-header"><h3>رفض طلب شحن</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
+    <form method="post" action="/panel/admin/topups/0/reject" class="panel-form">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid">
+        <div><label>السبب</label><textarea name="reason" required></textarea></div>
+      </div>
+      <div class="panel-form-actions"><button class="panel-btn panel-btn-danger" type="submit">رفض</button></div>
+    </form>
+  </div>
+</div>
+<%- include('../layout/footer') %>

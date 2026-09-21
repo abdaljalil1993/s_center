@@ -1,0 +1,40 @@
+<aside class="panel-sidebar">
+  <div class="panel-brand">
+    <h1>Student Bot</h1>
+    <small>لوحة التحكم</small>
+  </div>
+  <% if (currentUser) { %>
+    <div class="panel-card" style="margin-bottom:16px;">
+      <strong><%= currentUser.fullName %></strong><br>
+      <span class="panel-muted"><%= currentUser.role %></span>
+    </div>
+  <% } %>
+  <nav class="panel-nav">
+    <% if (!currentUser) { %>
+      <a href="/panel/login">تسجيل الدخول</a>
+    <% } else if (currentUser.role === 'ADMIN') { %>
+      <a href="/panel/admin/overview">نظرة عامة</a>
+      <a href="/panel/admin/specializations">التخصصات</a>
+      <a href="/panel/admin/courses">الكورسات</a>
+      <a href="/panel/admin/lectures">المحاضرات</a>
+      <a href="/panel/admin/topups">طلبات الشحن <span class="panel-badge"><%= pendingTopupsCount || 0 %></span></a>
+      <a href="/panel/admin/users">المستخدمون</a>
+      <a href="/panel/admin/teachers">المدرسون</a>
+      <a href="/panel/admin/notifications">الإشعارات</a>
+      <a href="/panel/admin/stats">الإحصاءات</a>
+      <form method="post" action="/panel/logout" style="margin-top:12px;">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button type="submit" data-confirm="هل تريد تسجيل الخروج؟">تسجيل الخروج</button>
+      </form>
+    <% } else if (currentUser.role === 'TEACHER') { %>
+      <a href="/panel/teacher/courses">كورساتي</a>
+      <a href="/panel/teacher/lectures">المحاضرات</a>
+      <a href="/panel/teacher/earnings">الأرباح</a>
+      <form method="post" action="/panel/logout" style="margin-top:12px;">
+        <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+        <button type="submit" data-confirm="هل تريد تسجيل الخروج؟">تسجيل الخروج</button>
+      </form>
+    <% } %>
+  </nav>
+</aside>
+<div class="panel-main">

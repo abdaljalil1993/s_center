@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.purchaseRoutes = void 0;
+const express_1 = require("express");
+const auth_1 = require("../../middlewares/auth");
+const validate_1 = require("../../middlewares/validate");
+const schemas_1 = require("./schemas");
+const controller_1 = require("./controller");
+exports.purchaseRoutes = (0, express_1.Router)();
+exports.purchaseRoutes.post('/courses/:id/purchase', auth_1.authMiddleware, (0, validate_1.validate)({ params: schemas_1.purchaseCourseParamSchema }), controller_1.buyCourse);
+exports.purchaseRoutes.get('/me/courses', auth_1.authMiddleware, controller_1.myCourses);
+exports.purchaseRoutes.get('/me/payments', auth_1.authMiddleware, controller_1.myPayments);

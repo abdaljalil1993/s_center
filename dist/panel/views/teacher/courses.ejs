@@ -1,0 +1,33 @@
+<%- include('../layout/header', { title: 'كورساتي' }) %>
+<%- include('../layout/sidebar', { currentUser, csrfToken }) %>
+<%- include('../partials/flash', { flash }) %>
+<div class="panel-topbar">
+  <div>
+    <h1 style="margin:0;">كورساتي</h1>
+  </div>
+</div>
+<div class="panel-table">
+  <table>
+    <thead>
+      <tr>
+        <th>الاسم</th>
+        <th>المشتريات</th>
+        <th>الأرباح</th>
+        <th>السعر</th>
+        <th>الحالة</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% courses.forEach((item) => { %>
+        <tr>
+          <td><%= item.name %></td>
+          <td><%= item.purchases_count %></td>
+          <td><%= money(item.earned) %></td>
+          <td><%= money(item.price) %></td>
+          <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<%- include('../layout/footer') %>

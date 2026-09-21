@@ -1,0 +1,26 @@
+<%- include('../layout/header', { title }) %>
+<%- include('../layout/sidebar', { currentUser: null, csrfToken }) %>
+<div class="panel-login-wrap">
+  <div class="panel-login-card">
+    <h1 style="margin-top:0;">تسجيل الدخول للوحة التحكم</h1>
+    <p class="panel-muted">الرجاء إدخال بيانات حساب المدير أو المدرس.</p>
+    <%- include('../partials/flash', { flash }) %>
+    <form method="post" action="/panel/login" class="panel-form" style="box-shadow:none;border:0;padding:0;">
+      <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <div class="panel-form-grid" style="grid-template-columns:1fr;">
+        <div>
+          <label>اسم المستخدم</label>
+          <input name="username" type="text" required>
+        </div>
+        <div>
+          <label>كلمة المرور</label>
+          <input name="password" type="password" required>
+        </div>
+      </div>
+      <div class="panel-form-actions">
+        <button class="panel-btn panel-btn-primary" type="submit">دخول</button>
+      </div>
+    </form>
+  </div>
+</div>
+<%- include('../layout/footer') %>
