@@ -43,18 +43,26 @@ export async function lecturesPage(req: Request, res: Response) {
 export async function createLectureAction(req: Request, res: Response) {
   await createLectureForTeacher(req.user!.id, Number(req.params.id), req.body);
   setFlash(res, 'success', 'تم حفظ المحاضرة');
-  return res.redirect(`/panel/teacher/courses/${req.params.id}/lectures`);
+  return res.redirect(`/panel/teacher/lectures?courseId=${req.params.id}`);
 }
 
 export async function updateLectureAction(req: Request, res: Response) {
   await updateTeacherLecture(req.user!.id, Number(req.params.id), req.body);
   setFlash(res, 'success', 'تم تحديث المحاضرة');
+  const courseId = Number(req.body.course_id);
+  if (Number.isFinite(courseId) && courseId > 0) {
+    return res.redirect(`/panel/teacher/lectures?courseId=${courseId}`);
+  }
   return res.redirect('/panel/teacher/lectures');
 }
 
 export async function hideLectureAction(req: Request, res: Response) {
   await archiveTeacherLecture(req.user!.id, Number(req.params.id));
   setFlash(res, 'success', 'تم إخفاء المحاضرة');
+  const courseId = Number(req.query.courseId ?? req.body.course_id);
+  if (Number.isFinite(courseId) && courseId > 0) {
+    return res.redirect(`/panel/teacher/lectures?courseId=${courseId}`);
+  }
   return res.redirect('/panel/teacher/lectures');
 }
 

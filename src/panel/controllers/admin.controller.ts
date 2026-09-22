@@ -358,9 +358,10 @@ export async function notificationsPage(req: Request, res: Response) {
 
 export async function sendNotificationAction(req: Request, res: Response) {
   const username = typeof req.body.username === 'string' ? req.body.username.trim() : '';
+  const sendAll = ['true', '1', 'on', 'yes'].includes(String(req.body.all ?? '').toLowerCase());
   let payload: { all?: boolean; user_id?: number; title: string; body: string };
 
-  if (req.body.all === 'true') {
+  if (sendAll) {
     payload = { all: true, title: req.body.title, body: req.body.body };
   } else if (username) {
     const user = await AppDataSource.getRepository(User).findOne({ where: { username } });
@@ -372,8 +373,8 @@ export async function sendNotificationAction(req: Request, res: Response) {
     throw new AppError(400, 'يجب تحديد المستخدم أو اختيار الإرسال للجميع');
   }
 
-  await createNotifications(payload);
-  setFlash(res, 'success', 'تم إرسال الإشعار');
+  const result = await createNotifications(payload);
+  setFlash(res, 'success', `تم إرسال الإشعار إلى ${result.count} مستخدم`);
   return res.redirect('/panel/admin/notifications');
 }
 

@@ -16,6 +16,7 @@ const envSchema = z.object({
     .transform((value) => value === 'true'),
   JWT_SECRET: z.string().min(1),
   JWT_EXPIRES_IN: z.string().min(1),
+  STAFF_JWT_EXPIRES_IN: z.string().optional(),
   CORS_ORIGINS: z.string().min(1),
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
@@ -40,5 +41,6 @@ if (corsOrigins.length === 0) {
 
 export const env = {
   ...parsed.data,
+  STAFF_JWT_EXPIRES_IN: parsed.data.STAFF_JWT_EXPIRES_IN || parsed.data.JWT_EXPIRES_IN,
   CORS_ORIGINS: corsOrigins,
 };

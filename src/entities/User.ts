@@ -23,6 +23,12 @@ export class User extends BaseColumns {
   @Column({ type: 'enum', enum: UserRole, default: UserRole.STUDENT })
   role!: UserRole;
 
+  @Column({ name: 'token_version', type: 'int', default: 0 })
+  tokenVersion!: number;
+
+  @Column({ name: 'is_test', type: 'boolean', default: false })
+  isTest!: boolean;
+
   @Column({ name: 'is_active', type: 'boolean', default: true })
   isActive!: boolean;
 

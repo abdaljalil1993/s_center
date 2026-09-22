@@ -18,9 +18,39 @@ export const teacherLectureCreateSchema = z
 
 export const teacherLectureUpdateSchema = teacherLectureCreateSchema.partial().strict();
 
+export const teacherCourseUpdateSchema = z
+  .object({
+    description: z.string().trim().max(5000).nullable().optional(),
+  })
+  .strict();
+
+export const teacherLecturePublishSchema = z
+  .object({
+    is_published: z.boolean(),
+  })
+  .strict();
+
+export const teacherLectureOrderSchema = z
+  .object({
+    lecture_ids: z.array(z.coerce.number().int().positive()).min(1),
+  })
+  .strict();
+
 export const teacherStatsQuerySchema = z
   .object({
     from: z.string().datetime().optional(),
     to: z.string().datetime().optional(),
+  })
+  .strict();
+
+export const teacherDashboardQuerySchema = z
+  .object({
+    days: z.coerce.number().int().refine((value) => [7, 30, 90].includes(value), 'days must be 7, 30, or 90').default(30),
+  })
+  .strict();
+
+export const teacherEarningsQuerySchema = z
+  .object({
+    month: z.string().regex(/^\d{4}-\d{2}$/).optional(),
   })
   .strict();

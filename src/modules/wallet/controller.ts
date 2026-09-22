@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { asyncHandler } from '../../utils/asyncHandler';
+import { executeIdempotent } from '../../services/idempotency';
 import { createTopupRequest, getWallet, listMyTopupRequests, listWalletTransactions } from './service';
 
 export const wallet = asyncHandler(async (req: Request, res: Response) => {
@@ -14,8 +15,16 @@ export const transactions = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const createTopup = asyncHandler(async (req: Request, res: Response) => {
-  const data = await createTopupRequest(req.user!.id, req.body);
-  res.status(201).json({ success: true, data });
+  const result = await executeIdempotent({
+    actorId: req.user!.id,
+    route: '/api/topup-requests',
+    key: req.get('Idempotency-Key') ?? undefined,
+    action: async () => {
+      const data = await createTopupRequest(req.user!.id, req.body);
+      return { status: 201, body: { success: true, data } };
+    },
+  });
+  res.status(result.status).json(result.body);
 });
 
 export const topupRequests = asyncHandler(async (req: Request, res: Response) => {

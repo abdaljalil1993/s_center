@@ -26,7 +26,7 @@ export function errorMiddleware(error: unknown, _req: Request, res: Response, _n
       setFlash(res, 'error', error.message);
       return renderPanelErrorPage(res, error.statusCode >= 400 && error.statusCode < 600 ? error.statusCode : 500);
     }
-    return res.status(error.statusCode).json({ success: false, message: error.message });
+    return res.status(error.statusCode).json({ success: false, message: error.message, code: error.code });
   }
 
   // Validation errors

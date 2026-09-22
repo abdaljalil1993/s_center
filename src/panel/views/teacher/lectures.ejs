@@ -11,7 +11,7 @@
     <select name="courseId">
       <option value="">اختر كورس</option>
       <% courses.forEach((course) => { %>
-        <option value="<%= course.id %>" <%= String(selectedCourseId) === String(course.id) ? 'selected' : '' %>><%= course.name %></option>
+        <option value="<%= course.course_id %>" <%= String(selectedCourseId) === String(course.course_id) ? 'selected' : '' %>><%= course.name %></option>
       <% }) %>
     </select>
     <button class="panel-btn panel-btn-secondary" type="submit">عرض</button>
@@ -34,7 +34,7 @@
           <td><%= item.is_published ? 'منشور' : 'مخفي' %></td>
           <td>
             <button class="panel-btn panel-btn-secondary" data-modal-open="teacher-lecture-edit-modal" data-modal-action="/panel/teacher/lectures/<%= item.id %>" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل</button>
-            <form method="post" action="/panel/teacher/lectures/<%= item.id %>/hide" style="display:inline;">
+            <form method="post" action="/panel/teacher/lectures/<%= item.id %>/hide?courseId=<%= selectedCourseId %>" style="display:inline;">
               <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
               <button class="panel-btn panel-btn-secondary" type="submit" data-confirm="هل تريد إخفاء هذه المحاضرة؟">إخفاء</button>
             </form>
@@ -67,6 +67,7 @@
     <div class="panel-modal-header"><h3>تعديل محاضرة</h3><button type="button" class="panel-modal-close" data-modal-close>×</button></div>
     <form method="post" action="/panel/teacher/lectures/0" class="panel-form">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+      <input type="hidden" name="course_id" data-fill="course_id">
       <div class="panel-form-grid">
         <div><label>العنوان</label><input name="title" data-fill="title"></div>
         <div><label>النوع</label>

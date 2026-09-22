@@ -6,12 +6,7 @@ import { env } from '../config/env';
 import { User } from '../entities/User';
 import { AppError } from '../utils/AppError';
 import { UserRole } from '../entities/enums';
-
-interface TokenPayload {
-  userId: number;
-  role: string;
-  deviceId: string | null;
-}
+import type { AuthTokenPayload } from '../utils/jwt';
 
 export async function authMiddleware(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
@@ -22,9 +17,9 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
 
   const token = header.slice('Bearer '.length).trim();
 
-  let payload: TokenPayload;
+  let payload: AuthTokenPayload;
   try {
-    payload = jwt.verify(token, env.JWT_SECRET) as TokenPayload;
+    payload = jwt.verify(token, env.JWT_SECRET) as AuthTokenPayload;
   } catch {
     return next(new AppError(401, 'Invalid token'));
   }
@@ -36,6 +31,10 @@ export async function authMiddleware(req: Request, _res: Response, next: NextFun
   }
 
   if (user.role !== payload.role) {
+    return next(new AppError(401, 'Authentication required'));
+  }
+
+  if (user.tokenVersion !== payload.tokenVersion) {
     return next(new AppError(401, 'Authentication required'));
   }
 

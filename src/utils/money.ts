@@ -2,9 +2,31 @@ import { z } from 'zod';
 
 const moneyPattern = /^-?\d+(?:\.\d{1,2})?$/;
 
+function normalizeMoneyInput(value: string): string {
+  const arabicIndic = '٠١٢٣٤٥٦٧٨٩';
+  const easternArabicIndic = '۰۱۲۳۴۵۶۷۸۹';
+
+  let normalized = value.trim();
+
+  normalized = normalized
+    .replace(/[٠-٩]/g, (digit) => String(arabicIndic.indexOf(digit)))
+    .replace(/[۰-۹]/g, (digit) => String(easternArabicIndic.indexOf(digit)))
+    .replace(/\u066C/g, '')
+    .replace(/\u066B/g, '.')
+    .replace(/\s+/g, '');
+
+  if (!normalized.includes('.') && normalized.includes(',')) {
+    normalized = normalized.replace(/,/g, '.');
+  } else {
+    normalized = normalized.replace(/,/g, '');
+  }
+
+  return normalized;
+}
+
 export const moneySchema = z
   .union([z.string(), z.number()])
-  .transform((value) => String(value).trim())
+  .transform((value) => normalizeMoneyInput(String(value)))
   .refine((value) => moneyPattern.test(value), 'Invalid money amount');
 
 export const positiveMoneySchema = moneySchema.refine(
@@ -18,7 +40,7 @@ export const signedMoneySchema = moneySchema.refine(
 );
 
 export function toCents(value: string): bigint {
-  const normalized = value.trim();
+  const normalized = normalizeMoneyInput(value);
   if (!moneyPattern.test(normalized)) {
     throw new Error('Invalid money amount');
   }

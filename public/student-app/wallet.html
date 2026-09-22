@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>المحفظة - تطبيق الطالب</title>
+  <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+  <div class="student-shell">
+    <nav id="studentNav" class="student-nav"></nav>
+    <main class="student-main">
+      <section class="student-headline">
+        <h1 class="student-page-title">المحفظة</h1>
+        <p class="student-subtitle">الرصيد، طلبات الشحن، وسجل العمليات.</p>
+      </section>
+
+      <section id="walletState"></section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">الرصيد الحالي</h3>
+        <div id="walletBalance" class="student-wallet-balance">0.00 ل.س</div>
+      </section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">طلب شحن</h3>
+        <form id="topupForm" class="student-form" novalidate>
+          <label class="student-form-row">
+            <span>المبلغ</span>
+            <input type="text" name="amount" placeholder="50.00" required>
+          </label>
+          <label class="student-form-row">
+            <span>طريقة الشحن</span>
+            <select name="method" required>
+              <option value="SHAM_CASH">SHAM_CASH</option>
+              <option value="TRANSFER_OFFICE">TRANSFER_OFFICE</option>
+            </select>
+          </label>
+          <label class="student-form-row">
+            <span>رقم المرجع</span>
+            <input type="text" name="reference_number" required>
+          </label>
+          <label class="student-form-row">
+            <span>اسم المرسل</span>
+            <input type="text" name="sender_name" required>
+          </label>
+          <label class="student-form-row">
+            <span>ملاحظة (اختياري)</span>
+            <textarea name="note"></textarea>
+          </label>
+          <button id="topupSubmit" type="submit" class="student-btn student-btn-primary">إرسال الطلب</button>
+          <p id="topupMessage" class="student-inline-message"></p>
+        </form>
+      </section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">طلباتي السابقة</h3>
+        <div id="topupList" class="student-stack"></div>
+        <button id="topupMore" type="button" class="student-btn student-btn-secondary">تحميل المزيد</button>
+      </section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">سجل الحركات</h3>
+        <div id="txList" class="student-stack"></div>
+        <button id="txMore" type="button" class="student-btn student-btn-secondary">تحميل المزيد</button>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/student/js/wallet.js"></script>
+</body>
+</html>

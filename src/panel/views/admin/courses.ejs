@@ -72,7 +72,7 @@
           <select name="teacher_id">
             <option value="">بدون مدرس</option>
             <% teachers.forEach((item) => { %>
-              <option value="<%= item.id %>"><%= item.full_name || item.username %></option>
+              <option value="<%= item.teacher_id %>"><%= item.full_name || item.username %></option>
             <% }) %>
           </select>
         </div>
@@ -105,7 +105,7 @@
           <select name="teacher_id" data-fill="teacher_id">
             <option value="">بدون مدرس</option>
             <% teachers.forEach((item) => { %>
-              <option value="<%= item.id %>"><%= item.full_name || item.username %></option>
+              <option value="<%= item.teacher_id %>"><%= item.full_name || item.username %></option>
             <% }) %>
           </select>
         </div>

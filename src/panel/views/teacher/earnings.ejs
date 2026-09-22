@@ -7,6 +7,13 @@
   <div class="panel-card panel-stat"><span>المدفوع</span><strong><%= money(stats.total_paid) %></strong></div>
   <div class="panel-card panel-stat"><span>المتبقي</span><strong><%= money(stats.remaining) %></strong></div>
 </div>
+<div class="panel-card" style="margin-bottom:16px;">
+  <p class="panel-muted" style="margin:0; line-height:1.9;">
+    إجمالي الأرباح = مجموع حصة المدرس من كل عمليات شراء الكورسات.<br>
+    المدفوع = مجموع الدفعات التي أنشأها الأدمن للمدرس.<br>
+    المتبقي = الأرباح - المدفوع (المبلغ المستحق غير المصروف بعد).
+  </p>
+</div>
 <div class="panel-card">
   <h3 style="margin-top:0;">الأرباح حسب الكورس</h3>
   <div class="panel-table">

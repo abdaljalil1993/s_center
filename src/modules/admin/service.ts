@@ -181,6 +181,20 @@ export async function listSpecializations() {
   return specializations.map(mapSpecialization);
 }
 
+export async function getSpecializationById(id: number) {
+  return mapSpecialization(await findSpecializationOrFail(id));
+}
+
+export async function listSpecializationsFiltered(search?: string) {
+  const items = await listSpecializations();
+  if (!search) {
+    return items;
+  }
+
+  const normalized = search.trim().toLowerCase();
+  return items.filter((item) => item.name.toLowerCase().includes(normalized));
+}
+
 export async function createSpecialization(input: { name: string; is_published?: boolean; sort_order?: number }) {
   const specialization = AppDataSource.getRepository(Specialization).create({
     name: input.name,
@@ -214,12 +228,87 @@ export async function archiveSpecialization(id: number) {
   return mapSpecialization(await repository.save(specialization));
 }
 
+export async function setSpecializationPublished(id: number, isPublished: boolean) {
+  return updateSpecialization(id, { is_published: isPublished });
+}
+
 export async function listCourses() {
-  const courses = await AppDataSource.getRepository(Course).find({
-    relations: { specialization: true, teacher: true },
-    order: { sortOrder: 'ASC', id: 'ASC' },
-  });
-  return courses.map(mapCourse);
+  return listCoursesFiltered({});
+}
+
+export async function listCoursesFiltered(filters: {
+  specializationId?: number;
+  year?: number;
+  teacherId?: number;
+  is_published?: boolean;
+  search?: string;
+}) {
+  const query = AppDataSource.getRepository(Course)
+    .createQueryBuilder('course')
+    .innerJoin('course.specialization', 'specialization')
+    .leftJoin('course.teacher', 'teacher')
+    .leftJoin('course.purchases', 'purchase')
+    .select('course.id', 'id')
+    .addSelect('specialization.id', 'specialization_id')
+    .addSelect('specialization.name', 'specialization_name')
+    .addSelect('teacher.id', 'teacher_id')
+    .addSelect('teacher.full_name', 'teacher_full_name')
+    .addSelect('course.teacher_percent', 'teacher_percent')
+    .addSelect('course.year', 'year')
+    .addSelect('course.name', 'name')
+    .addSelect('course.description', 'description')
+    .addSelect('course.price', 'price')
+    .addSelect('course.is_published', 'is_published')
+    .addSelect('course.sort_order', 'sort_order')
+    .addSelect('course.created_at', 'created_at')
+    .addSelect('course.updated_at', 'updated_at')
+    .addSelect('COUNT(purchase.id)', 'purchases_count')
+    .groupBy('course.id')
+    .addGroupBy('specialization.id')
+    .addGroupBy('specialization.name')
+    .addGroupBy('teacher.id')
+    .addGroupBy('teacher.full_name')
+    .orderBy('course.sort_order', 'ASC')
+    .addOrderBy('course.id', 'ASC');
+
+  if (filters.specializationId) {
+    query.andWhere('specialization.id = :specializationId', { specializationId: filters.specializationId });
+  }
+  if (filters.year) {
+    query.andWhere('course.year = :year', { year: filters.year });
+  }
+  if (filters.teacherId) {
+    query.andWhere('teacher.id = :teacherId', { teacherId: filters.teacherId });
+  }
+  if (filters.is_published !== undefined) {
+    query.andWhere('course.is_published = :isPublished', { isPublished: filters.is_published });
+  }
+  if (filters.search) {
+    query.andWhere('(course.name LIKE :search OR course.description LIKE :search)', { search: `%${filters.search}%` });
+  }
+
+  const rows = await query.getRawMany<Record<string, unknown>>();
+  return rows.map((row) => ({
+    id: Number(row.id),
+    specialization_id: Number(row.specialization_id),
+    specialization_name: String(row.specialization_name ?? ''),
+    teacher_id: row.teacher_id === null ? null : Number(row.teacher_id),
+    teacher_full_name: row.teacher_full_name === null ? null : String(row.teacher_full_name),
+    teacher_percent: String(row.teacher_percent ?? '0.00'),
+    year: Number(row.year),
+    name: String(row.name ?? ''),
+    description: row.description === null ? null : String(row.description ?? ''),
+    price: String(row.price ?? '0.00'),
+    is_published: Boolean(row.is_published),
+    sort_order: Number(row.sort_order ?? 0),
+    purchases_count: Number(row.purchases_count ?? 0),
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }));
+}
+
+export async function getCourseById(id: number) {
+  return mapCourse(await findCourseOrFail(id));
 }
 
 export async function createCourse(input: { specialization_id: number; year: number; name: string; description?: string | null; price: string; is_published?: boolean; sort_order?: number; teacher_id?: number | null; teacher_percent?: string }) {
@@ -273,12 +362,30 @@ export async function archiveCourse(id: number) {
   return mapCourse(await repository.save(course));
 }
 
+export async function setCoursePublished(id: number, isPublished: boolean) {
+  return updateCourse(id, { is_published: isPublished });
+}
+
 export async function listLectures() {
+  return listLecturesFiltered();
+}
+
+export async function listLecturesFiltered(courseId?: number) {
   const lectures = await AppDataSource.getRepository(Lecture).find({
+    where: courseId ? { course: { id: courseId } } : undefined,
     relations: { course: { specialization: true, teacher: true }, createdBy: true },
     order: { sortOrder: 'ASC', id: 'ASC' },
   });
   return lectures.map(mapLecture);
+}
+
+export async function listCourseLecturesForAdmin(courseId: number) {
+  await findCourseOrFail(courseId);
+  return listLecturesFiltered(courseId);
+}
+
+export async function getLectureById(id: number) {
+  return mapLecture(await findLectureOrFail(id));
 }
 
 export async function createLecture(adminId: number, input: { course_id: number; title: string; type: string; url?: string | null; content?: string | null; is_published?: boolean; sort_order?: number }) {
@@ -322,6 +429,46 @@ export async function archiveLecture(id: number) {
   }
   lecture.isPublished = false;
   return mapLecture(await repository.save(lecture));
+}
+
+export async function setLecturePublished(id: number, isPublished: boolean) {
+  return updateLecture(id, { is_published: isPublished });
+}
+
+export async function reorderCourseLectures(courseId: number, lectureIds: number[]) {
+  return AppDataSource.transaction(async (manager) => {
+    await findCourseOrFail(courseId);
+    const repository = manager.getRepository(Lecture);
+    const lectures = await repository.find({
+      where: { course: { id: courseId } },
+      relations: { course: true, createdBy: true },
+      order: { sortOrder: 'ASC', id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (lectures.length !== lectureIds.length) {
+      throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+    }
+
+    const existingIds = lectures.map((lecture) => lecture.id).sort((left, right) => left - right);
+    const requestedIds = [...lectureIds].sort((left, right) => left - right);
+
+    if (existingIds.some((id, index) => id !== requestedIds[index])) {
+      throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+    }
+
+    const lectureMap = new Map(lectures.map((lecture) => [lecture.id, lecture]));
+    for (let index = 0; index < lectureIds.length; index += 1) {
+      const lecture = lectureMap.get(lectureIds[index]);
+      if (!lecture) {
+        throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+      }
+      lecture.sortOrder = index;
+      await repository.save(lecture);
+    }
+
+    return listCourseLecturesForAdmin(courseId);
+  });
 }
 
 export async function listTopupRequests(status: TopupStatus) {
@@ -425,18 +572,107 @@ export async function rejectTopupRequest(topupRequestId: number, reviewerId: num
 }
 
 export async function listUsers(search?: string) {
+  return listUsersFiltered({ search });
+}
+
+export async function listUsersFiltered(filters: {
+  search?: string;
+  role?: UserRole;
+  is_active?: boolean;
+  is_test?: boolean;
+}) {
   const repository = AppDataSource.getRepository(User);
-  const users = await repository.find({
-    where: search
-      ? [
-          { username: Like(`%${search}%`) },
-          { fullName: Like(`%${search}%`) },
-        ]
-      : undefined,
+  const query = repository.createQueryBuilder('user').orderBy('user.created_at', 'DESC').addOrderBy('user.id', 'DESC');
+
+  if (filters.search) {
+    query.andWhere(new Brackets((qb) => {
+      qb.where('user.username LIKE :search', { search: `%${filters.search}%` })
+        .orWhere('user.full_name LIKE :search', { search: `%${filters.search}%` });
+    }));
+  }
+  if (filters.role) {
+    query.andWhere('user.role = :role', { role: filters.role });
+  }
+  if (filters.is_active !== undefined) {
+    query.andWhere('user.is_active = :isActive', { isActive: filters.is_active });
+  }
+  if (filters.is_test !== undefined) {
+    query.andWhere('user.is_test = :isTest', { isTest: filters.is_test });
+  }
+
+  const users = await query.getMany();
+
+  return users.map(mapUser);
+}
+
+export async function getUserById(userId: number) {
+  const user = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  const [purchasesCount, topups] = await Promise.all([
+    AppDataSource.getRepository(Purchase).count({ where: { user: { id: userId } } }),
+    AppDataSource.getRepository(TopupRequest).find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC', id: 'DESC' },
+      take: 5,
+      relations: { user: true, reviewedBy: true },
+    }),
+  ]);
+
+  return {
+    ...mapUser(user),
+    purchases_count: purchasesCount,
+    last_topups: topups.map(mapTopupRequest),
+  };
+}
+
+export async function listUserTransactions(userId: number) {
+  const user = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  const transactions = await AppDataSource.getRepository(Transaction).find({
+    where: { user: { id: userId } },
     order: { createdAt: 'DESC', id: 'DESC' },
   });
 
-  return users.map(mapUser);
+  return transactions.map((transaction) => ({
+    id: transaction.id,
+    type: transaction.type,
+    amount: transaction.amount,
+    balance_after: transaction.balanceAfter,
+    description: transaction.description,
+    reference_type: transaction.referenceType,
+    reference_id: transaction.referenceId,
+    created_at: transaction.createdAt,
+  }));
+}
+
+export async function listUserPurchases(userId: number) {
+  const user = await AppDataSource.getRepository(User).findOne({ where: { id: userId } });
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  const purchases = await AppDataSource.getRepository(Purchase).find({
+    where: { user: { id: userId } },
+    relations: { course: { specialization: true, teacher: true }, teacher: true },
+    order: { createdAt: 'DESC', id: 'DESC' },
+  });
+
+  return purchases.map((purchase) => ({
+    id: purchase.id,
+    course_id: purchase.course.id,
+    course_name: purchase.course.name,
+    specialization_name: purchase.course.specialization.name,
+    teacher_id: purchase.teacher?.id ?? null,
+    price_paid: purchase.pricePaid,
+    teacher_share: purchase.teacherShare,
+    created_at: purchase.createdAt,
+  }));
 }
 
 export async function setUserActive(userId: number, isActive: boolean) {
@@ -506,7 +742,10 @@ export async function createNotifications(input: { all?: boolean; user_id?: numb
         ? await userRepository.find({ where: { id: input.user_id }, select: { id: true } })
         : [];
 
-    if (!input.all && targetUsers.length === 0) {
+    if (targetUsers.length === 0) {
+      if (input.all) {
+        throw new AppError(400, 'No users available to receive notification');
+      }
       throw new AppError(404, 'User not found');
     }
 
@@ -600,6 +839,36 @@ async function loadTeacherRows(from?: string, to?: string) {
 
 export async function listTeachers() {
   return (await loadTeacherRows()).map(mapTeacherAggregate);
+}
+
+export async function getTeacherById(teacherId: number) {
+  const teacher = await AppDataSource.getRepository(User).findOne({ where: { id: teacherId, role: UserRole.TEACHER } });
+  if (!teacher) {
+    throw new AppError(404, 'Teacher not found');
+  }
+
+  const [totals, courses, payouts] = await Promise.all([
+    teachersStats(),
+    listCoursesFiltered({ teacherId }),
+    listTeacherPayouts(teacherId),
+  ]);
+
+  const total = totals.find((item) => item.teacher_id === teacherId) ?? {
+    teacher_id: teacherId,
+    username: teacher.username,
+    full_name: teacher.fullName,
+    purchases_count: 0,
+    earned: '0.00',
+    paid: '0.00',
+    remaining: '0.00',
+  };
+
+  return {
+    ...mapUser(teacher),
+    totals: total,
+    courses,
+    payouts,
+  };
 }
 
 export async function payoutTeacher(teacherId: number, createdById: number, amount: string, note?: string | null) {

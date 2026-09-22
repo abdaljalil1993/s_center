@@ -3,9 +3,16 @@ import 'reflect-metadata';
 import { AppDataSource } from './config/data-source';
 import { env } from './config/env';
 import { app } from './app';
+import { cleanupExpiredIdempotencyKeys } from './services/idempotency';
+
+let idempotencyCleanupTimer: NodeJS.Timeout | undefined;
 
 async function bootstrap() {
   await AppDataSource.initialize();
+  await cleanupExpiredIdempotencyKeys();
+  idempotencyCleanupTimer = setInterval(() => {
+    void cleanupExpiredIdempotencyKeys();
+  }, 6 * 60 * 60 * 1000);
 
   app.listen(env.PORT, () => {
     // Intentionally minimal startup output.
@@ -14,6 +21,9 @@ async function bootstrap() {
 }
 
 bootstrap().catch((error) => {
+  if (idempotencyCleanupTimer) {
+    clearInterval(idempotencyCleanupTimer);
+  }
   console.error('Failed to start server:');
   if (error instanceof Error) {
     console.error(error.message);

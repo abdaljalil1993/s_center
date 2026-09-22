@@ -50,7 +50,7 @@ export async function postLogout(req: Request, res: Response) {
   clearPanelAuthCookies(res);
   res.clearCookie('panel_csrf_token', { path: '/panel' });
   res.clearCookie('panel_flash', { path: '/panel' });
-  return res.redirect('/panel/login');
+  return res.redirect('/');
 }
 
 export async function getPanelHome(req: Request, res: Response) {

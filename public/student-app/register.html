@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إنشاء حساب - تطبيق الطالب</title>
+  <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+  <main class="student-auth-wrap">
+    <section class="student-auth-card">
+      <h1>إنشاء حساب جديد</h1>
+      <p class="student-subtitle">الحساب سيتربط بهذا المتصفح كجهاز واحد.</p>
+      <div id="authError" class="student-error-box" hidden></div>
+      <form id="registerForm" class="student-form" novalidate>
+        <label class="student-form-row">
+          <span>اسم المستخدم</span>
+          <input type="text" name="username" minlength="3" maxlength="30" required>
+        </label>
+        <label class="student-form-row">
+          <span>الاسم الكامل</span>
+          <input type="text" name="full_name" minlength="2" maxlength="120" required>
+        </label>
+        <label class="student-form-row">
+          <span>كلمة المرور</span>
+          <input type="password" name="password" minlength="8" autocomplete="new-password" required>
+        </label>
+        <label class="student-form-row">
+          <span>تأكيد كلمة المرور</span>
+          <input type="password" name="confirm_password" minlength="8" autocomplete="new-password" required>
+        </label>
+        <button id="registerSubmit" type="submit" class="student-btn student-btn-primary">إنشاء الحساب</button>
+      </form>
+      <p class="student-auth-footer">
+        لديك حساب بالفعل؟
+        <a class="student-link" href="/student/login.html">تسجيل الدخول</a>
+      </p>
+    </section>
+  </main>
+  <script type="module" src="/student/js/register.js"></script>
+</body>
+</html>

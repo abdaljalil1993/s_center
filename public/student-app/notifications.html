@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الإشعارات - تطبيق الطالب</title>
+  <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+  <div class="student-shell">
+    <nav id="studentNav" class="student-nav"></nav>
+    <main class="student-main">
+      <section class="student-headline">
+        <h1 class="student-page-title">الإشعارات</h1>
+        <p class="student-subtitle">اضغط على الإشعار لتمييزه كمقروء.</p>
+      </section>
+
+      <section id="notificationsState"></section>
+
+      <section class="student-card">
+        <div class="student-actions">
+          <button id="readAllButton" type="button" class="student-btn student-btn-secondary">تحديد الكل كمقروء</button>
+        </div>
+      </section>
+
+      <section id="notificationsList" class="student-stack"></section>
+      <button id="notificationsMore" type="button" class="student-btn student-btn-secondary">تحميل المزيد</button>
+    </main>
+  </div>
+  <script type="module" src="/student/js/notifications.js"></script>
+</body>
+</html>

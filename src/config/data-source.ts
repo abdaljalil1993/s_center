@@ -12,6 +12,8 @@ import { Specialization } from '../entities/Specialization';
 import { TopupRequest } from '../entities/TopupRequest';
 import { Transaction } from '../entities/Transaction';
 import { User } from '../entities/User';
+import { IdempotencyKey } from '../entities/IdempotencyKey';
+import { AuditLog } from '../entities/AuditLog';
 
 export const AppDataSource = new DataSource({
   type: 'mysql',
@@ -20,7 +22,7 @@ export const AppDataSource = new DataSource({
   username: env.DB_USER,
   password: env.DB_PASSWORD,
   database: env.DB_NAME,
-  entities: [User, Specialization, Course, Lecture, Purchase, TeacherPayout, Transaction, TopupRequest, Notification],
+  entities: [User, Specialization, Course, Lecture, Purchase, TeacherPayout, Transaction, TopupRequest, Notification, IdempotencyKey, AuditLog],
   synchronize: env.DB_SYNC,
   logging: false,
   charset: 'utf8mb4_unicode_ci',

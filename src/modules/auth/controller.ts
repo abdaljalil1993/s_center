@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
 import { asyncHandler } from '../../utils/asyncHandler';
-import { changePassword, getCurrentUser, loginUser, registerStudent } from './service';
+import { changePassword, getCurrentUser, loginUser, logoutAllSessions, registerStudent } from './service';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const result = await registerStudent(req.body);
@@ -20,5 +20,10 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
 
 export const updatePassword = asyncHandler(async (req: Request, res: Response) => {
   const result = await changePassword(req.user!.id, req.body);
+  res.status(200).json({ success: true, data: result });
+});
+
+export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
+  const result = await logoutAllSessions(req.user!.id);
   res.status(200).json({ success: true, data: result });
 });

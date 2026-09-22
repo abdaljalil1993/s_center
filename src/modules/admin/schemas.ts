@@ -46,6 +46,25 @@ const optionalTeacherIdSchema = z.preprocess(
 
 export const adminIdParamSchema = idParamSchema;
 
+export const paginationPageSchema = z
+  .object({
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .strict();
+
+export const publishedBodySchema = z
+  .object({
+    is_published: z.boolean(),
+  })
+  .strict();
+
+export const lectureOrderSchema = z
+  .object({
+    lecture_ids: z.array(z.coerce.number().int().positive()).min(1),
+  })
+  .strict();
+
 export const specializationCreateSchema = z
   .object({
     name: nameSchema,
@@ -89,6 +108,8 @@ export const lectureUpdateSchema = lectureCreateSchema.partial().strict();
 export const topupRequestsQuerySchema = z
   .object({
     status: z.nativeEnum(TopupStatus).optional().default(TopupStatus.PENDING),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
   })
   .strict();
 
@@ -114,6 +135,39 @@ export const adjustBalanceSchema = z
 export const adminUsersQuerySchema = z
   .object({
     search: z.string().trim().max(100).optional(),
+    role: z.enum(['STUDENT', 'TEACHER', 'ADMIN']).optional(),
+    is_active: z.coerce.boolean().optional(),
+    is_test: z.coerce.boolean().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .strict();
+
+export const adminCoursesQuerySchema = z
+  .object({
+    specializationId: z.coerce.number().int().positive().optional(),
+    year: z.coerce.number().int().min(1).max(5).optional(),
+    teacherId: z.coerce.number().int().positive().optional(),
+    is_published: z.coerce.boolean().optional(),
+    search: z.string().trim().max(150).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .strict();
+
+export const adminSpecializationsQuerySchema = z
+  .object({
+    search: z.string().trim().max(120).optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
+  })
+  .strict();
+
+export const adminLecturesQuerySchema = z
+  .object({
+    course_id: z.coerce.number().int().positive().optional(),
+    page: z.coerce.number().int().min(1).default(1),
+    limit: z.coerce.number().int().min(1).max(100).default(20),
   })
   .strict();
 

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>الملف الشخصي - تطبيق الطالب</title>
+  <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+  <div class="student-shell">
+    <nav id="studentNav" class="student-nav"></nav>
+    <main class="student-main">
+      <section class="student-headline">
+        <h1 class="student-page-title">حسابي</h1>
+        <p class="student-subtitle">بيانات الحساب وإعدادات الأمان.</p>
+      </section>
+
+      <section id="profileState"></section>
+
+      <section class="student-card student-stack">
+        <div class="student-card-row">
+          <strong>اسم المستخدم</strong>
+          <span id="profileUsername">-</span>
+        </div>
+        <div class="student-card-row">
+          <strong>الاسم الكامل</strong>
+          <span id="profileFullName">-</span>
+        </div>
+        <div class="student-card-row">
+          <strong>الرصيد</strong>
+          <span id="profileBalance">0.00</span>
+        </div>
+      </section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">تغيير كلمة المرور</h3>
+        <form id="passwordForm" class="student-form" novalidate>
+          <label class="student-form-row">
+            <span>كلمة المرور الحالية</span>
+            <input type="password" name="old_password" required>
+          </label>
+          <label class="student-form-row">
+            <span>كلمة المرور الجديدة</span>
+            <input type="password" name="new_password" minlength="8" required>
+          </label>
+          <label class="student-form-row">
+            <span>تأكيد كلمة المرور الجديدة</span>
+            <input type="password" name="confirm_password" minlength="8" required>
+          </label>
+          <button id="passwordSubmit" type="submit" class="student-btn student-btn-primary">تحديث كلمة المرور</button>
+          <p id="passwordMessage" class="student-inline-message"></p>
+        </form>
+      </section>
+
+      <section class="student-card">
+        <h3 class="student-section-title">تسجيل الخروج</h3>
+        <div class="student-actions">
+          <button id="logoutButton" type="button" class="student-btn student-btn-secondary">تسجيل الخروج</button>
+          <button id="logoutAllButton" type="button" class="student-btn student-btn-danger">تسجيل الخروج من كل الأجهزة</button>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/student/js/profile.js"></script>
+</body>
+</html>

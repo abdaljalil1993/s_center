@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>دوراتي - تطبيق الطالب</title>
+  <link rel="stylesheet" href="/student/css/student.css">
+</head>
+<body>
+  <div class="student-shell">
+    <nav id="studentNav" class="student-nav"></nav>
+    <main class="student-main">
+      <section class="student-headline">
+        <h1 class="student-page-title">دوراتي ومدفوعاتي</h1>
+        <p class="student-subtitle">الوصول السريع للمواد المشتراة وسجل المدفوعات.</p>
+      </section>
+
+      <section id="coursesState"></section>
+
+      <section class="student-tabs">
+        <button id="tabCourses" type="button" class="student-tab is-active">دوراتي</button>
+        <button id="tabPayments" type="button" class="student-tab">مدفوعاتي</button>
+      </section>
+
+      <section id="coursesSection" class="student-stack">
+        <div id="myCoursesList" class="student-grid"></div>
+      </section>
+
+      <section id="paymentsSection" class="student-stack" hidden>
+        <div id="paymentsList" class="student-stack"></div>
+        <button id="paymentsMore" type="button" class="student-btn student-btn-secondary">تحميل المزيد</button>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="/student/js/courses.js"></script>
+</body>
+</html>

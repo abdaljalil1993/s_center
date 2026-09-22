@@ -1,0 +1,15 @@
+:root {
+  color-scheme: light;
+  --bg: #f5f1e8;
+  --panel: #ffffff;
+  --panel-soft: #f7f4ee;
+  --text: #1d1b16;
+  --muted: #6f665b;
+  --border: #ded7ca;
+  --brand: #184e77;
+  --brand-soft: #d8e8f5;
+  --success: #1f7a4d;
+  --danger: #b23b3b;
+  --warning: #a36d00;
+  --shadow: 0 14px 40px rgba(37, 28, 17, 0.08);
+}

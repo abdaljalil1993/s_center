@@ -13,7 +13,8 @@ function toUserResponse(user: User) {
     full_name: user.fullName,
     role: user.role,
     is_active: user.isActive,
-    balance: user.balance,
+    is_test: user.isTest,
+    balance: user.role === UserRole.STUDENT ? user.balance : undefined,
   };
 }
 
@@ -46,6 +47,8 @@ export async function registerStudent(input: { username: string; full_name: stri
     fullName: input.full_name,
     passwordHash,
     role: UserRole.STUDENT,
+    tokenVersion: 0,
+    isTest: false,
     isActive: true,
     balance: '0.00',
     deviceId: input.device_id,
@@ -54,7 +57,7 @@ export async function registerStudent(input: { username: string; full_name: stri
   const savedUser = await userRepository.save(user);
 
   return {
-    token: signAuthToken({ userId: savedUser.id, role: savedUser.role, deviceId: savedUser.deviceId }),
+    token: signAuthToken({ userId: savedUser.id, role: savedUser.role, deviceId: savedUser.deviceId, tokenVersion: savedUser.tokenVersion }),
     user: toUserResponse(savedUser),
   };
 }
@@ -77,7 +80,7 @@ export async function loginUser(input: { username: string; password: string; dev
   }
 
   return {
-    token: signAuthToken({ userId: user.id, role: user.role, deviceId: user.role === UserRole.STUDENT ? user.deviceId : null }),
+    token: signAuthToken({ userId: user.id, role: user.role, deviceId: user.role === UserRole.STUDENT ? user.deviceId : null, tokenVersion: user.tokenVersion }),
     user: toUserResponse(user),
   };
 }
@@ -94,7 +97,7 @@ export async function loginForPanel(input: { username: string; password: string 
   }
 
   return {
-    token: signAuthToken({ userId: user.id, role: user.role, deviceId: null }),
+    token: signAuthToken({ userId: user.id, role: user.role, deviceId: null, tokenVersion: user.tokenVersion }),
     user: toUserResponse(user),
   };
 }
@@ -126,4 +129,18 @@ export async function changePassword(userId: number, input: { old_password: stri
   await userRepository.save(user);
 
   return { message: 'Password updated successfully' };
+}
+
+export async function logoutAllSessions(userId: number) {
+  const userRepository = AppDataSource.getRepository(User);
+  const user = await userRepository.findOne({ where: { id: userId } });
+
+  if (!user) {
+    throw new AppError(404, 'User not found');
+  }
+
+  user.tokenVersion += 1;
+  await userRepository.save(user);
+
+  return { message: 'All sessions logged out' };
 }

@@ -14,7 +14,7 @@ interface PanelTokenPayload {
 }
 
 function redirectToLogin(res: Response) {
-  return res.redirect('/panel/login');
+  return res.redirect('/');
 }
 
 export function clearPanelAuthCookies(res: Response) {

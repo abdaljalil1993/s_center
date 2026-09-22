@@ -112,6 +112,35 @@ export async function listMyCourses(teacherId: number) {
   return rows.map(mapCourseRow);
 }
 
+export async function getTeacherCourseById(teacherId: number, courseId: number) {
+  const course = await assertOwnedCourse(courseId, teacherId);
+  const stats = await listMyCourses(teacherId);
+  const summary = stats.find((item) => item.course_id === courseId);
+
+  return {
+    course_id: course.id,
+    name: course.name,
+    year: course.year,
+    description: course.description,
+    price: course.price,
+    teacher_percent: course.teacherPercent,
+    is_published: course.isPublished,
+    sort_order: course.sortOrder,
+    purchases_count: summary?.purchases_count ?? 0,
+    earned: summary?.earned ?? '0.00',
+  };
+}
+
+export async function updateTeacherCourseDescription(teacherId: number, courseId: number, input: { description?: string | null }) {
+  const course = await assertOwnedCourse(courseId, teacherId);
+  if (input.description !== undefined) {
+    course.description = input.description;
+  }
+
+  const saved = await AppDataSource.getRepository(Course).save(course);
+  return getTeacherCourseById(teacherId, saved.id);
+}
+
 export async function listCourseLectures(teacherId: number, courseId: number) {
   await assertOwnedCourse(courseId, teacherId);
 
@@ -167,6 +196,142 @@ export async function archiveTeacherLecture(teacherId: number, lectureId: number
   const lecture = await assertOwnedLecture(lectureId, teacherId);
   lecture.isPublished = false;
   return mapLecture(await repository.save(lecture));
+}
+
+export async function setTeacherLecturePublished(teacherId: number, lectureId: number, isPublished: boolean) {
+  const repository = AppDataSource.getRepository(Lecture);
+  const lecture = await assertOwnedLecture(lectureId, teacherId);
+  lecture.isPublished = isPublished;
+  return mapLecture(await repository.save(lecture));
+}
+
+export async function reorderTeacherCourseLectures(teacherId: number, courseId: number, lectureIds: number[]) {
+  return AppDataSource.transaction(async (manager) => {
+    await assertOwnedCourse(courseId, teacherId);
+    const repository = manager.getRepository(Lecture);
+    const lectures = await repository.find({
+      where: { course: { id: courseId } },
+      relations: { course: { teacher: true }, createdBy: true },
+      order: { sortOrder: 'ASC', id: 'ASC' },
+      lock: { mode: 'pessimistic_write' },
+    });
+
+    if (lectures.some((lecture) => lecture.course.teacher?.id !== teacherId) || lectures.length !== lectureIds.length) {
+      throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+    }
+
+    const existingIds = lectures.map((lecture) => lecture.id).sort((left, right) => left - right);
+    const requestedIds = [...lectureIds].sort((left, right) => left - right);
+    if (existingIds.some((id, index) => id !== requestedIds[index])) {
+      throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+    }
+
+    const map = new Map(lectures.map((lecture) => [lecture.id, lecture]));
+    for (let index = 0; index < lectureIds.length; index += 1) {
+      const lecture = map.get(lectureIds[index]);
+      if (!lecture) {
+        throw new AppError(400, 'lecture_ids must include all course lectures exactly once');
+      }
+      lecture.sortOrder = index;
+      await repository.save(lecture);
+    }
+
+    return listCourseLectures(teacherId, courseId);
+  });
+}
+
+export async function previewTeacherCourseLectures(teacherId: number, courseId: number) {
+  await assertOwnedCourse(courseId, teacherId);
+  const lectures = await AppDataSource.getRepository(Lecture).find({
+    where: { course: { id: courseId }, isPublished: true },
+    relations: { course: true, createdBy: true },
+    order: { sortOrder: 'ASC', id: 'ASC' },
+  });
+
+  return lectures.map(mapLecture);
+}
+
+export async function getTeacherDashboard(teacherId: number, days: number) {
+  const stats = await getTeacherStats(teacherId);
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
+
+  const rows = await AppDataSource.getRepository(Course)
+    .createQueryBuilder('course')
+    .innerJoin('course.purchases', 'purchase')
+    .select("DATE_FORMAT(CONVERT_TZ(purchase.created_at, '+00:00', '+03:00'), '%Y-%m-%d')", 'date')
+    .addSelect('COUNT(purchase.id)', 'purchases_count')
+    .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
+    .where('course.teacher_id = :teacherId', { teacherId })
+    .andWhere('purchase.created_at >= :from', { from: startDate.toISOString() })
+    .andWhere('purchase.created_at <= :to', { to: endDate.toISOString() })
+    .groupBy('date')
+    .orderBy('date', 'ASC')
+    .getRawMany<{ date: string; purchases_count: string; earned: string }>();
+
+  const map = new Map(rows.map((row) => [row.date, row]));
+  const series: Array<{ date: string; purchases_count: number; earned: string }> = [];
+  const current = new Date(Date.UTC(startDate.getUTCFullYear(), startDate.getUTCMonth(), startDate.getUTCDate()));
+  const finalDate = new Date(Date.UTC(endDate.getUTCFullYear(), endDate.getUTCMonth(), endDate.getUTCDate()));
+  while (current <= finalDate) {
+    const date = current.toISOString().slice(0, 10);
+    const row = map.get(date);
+    series.push({
+      date,
+      purchases_count: Number(row?.purchases_count ?? 0),
+      earned: String(row?.earned ?? '0.00'),
+    });
+    current.setUTCDate(current.getUTCDate() + 1);
+  }
+
+  return {
+    ...stats,
+    daily_sales: series,
+    per_course: stats.courses,
+  };
+}
+
+export async function getTeacherMonthlyEarnings(teacherId: number, month?: string) {
+  const target = month ?? new Date().toISOString().slice(0, 7);
+  const [year, monthNumber] = target.split('-').map(Number);
+  const from = new Date(Date.UTC(year, monthNumber - 1, 1));
+  const to = new Date(Date.UTC(year, monthNumber, 0, 23, 59, 59, 999));
+
+  const perCourse = await AppDataSource.getRepository(Course)
+    .createQueryBuilder('course')
+    .leftJoin('course.purchases', 'purchase', 'purchase.created_at >= :from AND purchase.created_at <= :to', {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    })
+    .select('course.id', 'course_id')
+    .addSelect('course.name', 'name')
+    .addSelect('COUNT(purchase.id)', 'purchases_count')
+    .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
+    .where('course.teacher_id = :teacherId', { teacherId })
+    .groupBy('course.id')
+    .orderBy('course.sort_order', 'ASC')
+    .addOrderBy('course.id', 'ASC')
+    .getRawMany<{ course_id: string; name: string; purchases_count: string; earned: string }>();
+
+  const payouts = await AppDataSource.getRepository(TeacherPayout).find({
+    where: { teacher: { id: teacherId } },
+    relations: { createdBy: true },
+    order: { createdAt: 'DESC', id: 'DESC' },
+  });
+
+  const monthlyPayouts = payouts.filter((item) => item.createdAt >= from && item.createdAt <= to).map(mapPayout);
+
+  return {
+    month: target,
+    courses: perCourse.map((row) => ({
+      course_id: Number(row.course_id),
+      name: row.name,
+      purchases_count: Number(row.purchases_count ?? 0),
+      earned: String(row.earned ?? '0.00'),
+    })),
+    payouts: monthlyPayouts,
+  };
 }
 
 export async function getTeacherStats(teacherId: number) {

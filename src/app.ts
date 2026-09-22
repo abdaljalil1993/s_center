@@ -74,8 +74,15 @@ app.use(
 app.use(cookieParser());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: false }));
-app.use(generalRateLimit);
+app.use(['/student', '/panel'], (_req, res, next) => {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+app.use('/student', express.static(path.resolve(process.cwd(), 'public', 'student-app')));
 app.use(express.static(path.resolve(process.cwd(), 'public')));
+app.use('/api', generalRateLimit);
 
 app.get('/', (_req, res) => {
   res.redirect('/panel');
@@ -83,9 +90,9 @@ app.get('/', (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api', catalogRoutes);
-app.use('/api', walletRoutes);
+app.use('/api/wallet', walletRoutes);
 app.use('/api', purchaseRoutes);
-app.use('/api', notificationsRoutes);
+app.use('/api/notifications', notificationsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/teacher', teacherRoutes);
 
