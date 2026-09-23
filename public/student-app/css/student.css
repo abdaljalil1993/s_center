@@ -54,6 +54,10 @@ textarea {
   padding: 16px 14px calc(96px + env(safe-area-inset-bottom));
 }
 
+.student-main > :not([hidden]) + :not([hidden]) {
+  margin-top: 14px;
+}
+
 .student-page-title {
   margin: 0 0 6px;
   font-size: 1.35rem;
@@ -65,7 +69,7 @@ textarea {
 }
 
 .student-headline {
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .student-headline h1,
@@ -207,7 +211,7 @@ textarea {
   background: color-mix(in srgb, var(--panel) 74%, transparent);
   padding: 16px;
   text-align: center;
-  margin-bottom: 14px;
+  margin: 0;
 }
 
 .student-state h3 {
@@ -414,7 +418,7 @@ textarea {
 .student-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .student-tab {
@@ -439,6 +443,12 @@ textarea {
 
   .student-main {
     padding: 26px;
+    max-width: 1220px;
+    margin-inline: auto;
+  }
+
+  .student-main > :not([hidden]) + :not([hidden]) {
+    margin-top: 16px;
   }
 
   .student-nav {
