@@ -42,70 +42,45 @@ function buildCourseBreadcrumb(context) {
   ];
 }
 
-function isDirectVideo(url) {
-  return /\.(mp4|webm|ogg)(\?.*)?$/i.test(url);
+function renderVideoPlayer(lecture) {
+  return `
+    <div class="student-media-wrap">
+      <video controls preload="metadata" class="student-media" data-media-lecture-id="${lecture.id}"></video>
+      <p class="student-muted" data-media-state="${lecture.id}">جارٍ تجهيز الفيديو المحمي...</p>
+    </div>
+  `;
 }
 
-function isYouTubeHost(hostname) {
-  const host = hostname.toLowerCase();
-  return host === 'youtu.be' || host.endsWith('youtube.com') || host.endsWith('youtube-nocookie.com');
-}
-
-function toEmbeddableVideoUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.toLowerCase();
-
-    if (host === 'youtu.be') {
-      const id = parsed.pathname.replace(/^\//, '');
-      return id ? `https://www.youtube.com/embed/${id}` : url;
+async function hydrateVideoPlayers(root) {
+  const players = Array.from(root.querySelectorAll('video[data-media-lecture-id]'));
+  await Promise.all(players.map(async (player) => {
+    const lectureId = Number(player.getAttribute('data-media-lecture-id') || 0);
+    const state = root.querySelector(`[data-media-state="${lectureId}"]`);
+    if (!lectureId) {
+      return;
     }
 
-    if (host.endsWith('youtube.com')) {
-      if (parsed.pathname === '/watch') {
-        const id = parsed.searchParams.get('v');
-        return id ? `https://www.youtube.com/embed/${id}?rel=0` : url;
+    try {
+      const response = await apiPost(`/lectures/${lectureId}/stream-url`, {}, { requiresAuth: true });
+      player.src = response.url;
+      player.setAttribute('preload', 'metadata');
+      if (state) {
+        state.textContent = 'يمكن تشغيل الفيديو الآن.';
       }
-
-      if (parsed.pathname.startsWith('/shorts/')) {
-        const id = parsed.pathname.split('/').filter(Boolean)[1];
-        return id ? `https://www.youtube.com/embed/${id}?rel=0` : url;
-      }
-
-      if (parsed.pathname.startsWith('/embed/')) {
-        return url;
+    } catch (error) {
+      player.removeAttribute('src');
+      player.load();
+      if (state) {
+        state.textContent = error?.message || 'تعذر تجهيز الفيديو.';
+        state.className = 'student-muted student-danger-text';
       }
     }
-  } catch (_error) {
-    return url;
-  }
-
-  return url;
-}
-
-function renderVideo(url) {
-  if (isDirectVideo(url)) {
-    return `<video controls preload="metadata" src="${url}" class="student-media"></video>`;
-  }
-
-  const embeddableUrl = toEmbeddableVideoUrl(url);
-  let referrerPolicy = 'no-referrer';
-  try {
-    const parsed = new URL(embeddableUrl);
-    if (isYouTubeHost(parsed.hostname)) {
-      // YouTube embeds may fail with error 153 when no referrer is sent.
-      referrerPolicy = 'strict-origin-when-cross-origin';
-    }
-  } catch (_error) {
-    referrerPolicy = 'no-referrer';
-  }
-
-  return `<iframe src="${embeddableUrl}" class="student-media" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="${referrerPolicy}"></iframe>`;
+  }));
 }
 
 function renderLectureBody(lecture) {
-  if (lecture.type === 'VIDEO' && lecture.url) {
-    return renderVideo(lecture.url);
+  if (lecture.type === 'VIDEO') {
+    return renderVideoPlayer(lecture);
   }
 
   if (lecture.type === 'PDF' && lecture.url) {
@@ -205,6 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const lectures = await apiGet(`/courses/${context.id}/lectures`);
     list.innerHTML = renderLectures(lectures);
+    void hydrateVideoPlayers(list);
     setViewState(state, null);
 
     const hasLocked = lectures.some((lecture) => lecture.locked);

@@ -9,13 +9,14 @@ import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
 import { Specialization } from '../../entities/Specialization';
 import { TopupRequest } from '../../entities/TopupRequest';
-import { TopupStatus, TransactionType } from '../../entities/enums';
+import { LectureType, LectureUploadStatus, TopupStatus, TransactionType } from '../../entities/enums';
 import { Transaction } from '../../entities/Transaction';
 import { User } from '../../entities/User';
 import { UserRole } from '../../entities/enums';
 import { AppError } from '../../utils/AppError';
 import { calculateMoneyShare, centsToMoney, toCents } from '../../utils/money';
 import { notify } from '../notifications/service';
+import { deleteStoredVideoFile, detectVideoDurationSeconds, type StoredVideoFile } from '../../services/media';
 
 function mapSpecialization(specialization: Specialization) {
   return {
@@ -55,13 +56,31 @@ function mapLecture(lecture: Lecture) {
     course_teacher_id: lecture.course.teacher ? lecture.course.teacher.id : null,
     title: lecture.title,
     type: lecture.type,
-    url: lecture.url,
+    url: lecture.type === LectureType.VIDEO ? null : lecture.url,
     content: lecture.content,
     is_published: lecture.isPublished,
     sort_order: lecture.sortOrder,
     created_by: lecture.createdBy ? lecture.createdBy.id : null,
     created_at: lecture.createdAt,
     updated_at: lecture.updatedAt,
+  };
+}
+
+function normalizeOptionalText(value: unknown) {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+
+  const text = String(value).trim();
+  return text.length ? text : null;
+}
+
+async function readUploadedVideoMetadata(file: StoredVideoFile) {
+  return {
+    storageFilename: file.filename,
+    fileSize: String(file.size),
+    durationSeconds: detectVideoDurationSeconds(file.path),
+    uploadStatus: LectureUploadStatus.READY,
   };
 }
 
@@ -388,37 +407,127 @@ export async function getLectureById(id: number) {
   return mapLecture(await findLectureOrFail(id));
 }
 
-export async function createLecture(adminId: number, input: { course_id: number; title: string; type: string; url?: string | null; content?: string | null; is_published?: boolean; sort_order?: number }) {
+export async function createLecture(adminId: number, input: { course_id: number; title: string; type: string; url?: string | null; content?: string | null; is_published?: boolean; sort_order?: number }, file?: StoredVideoFile | null) {
   const course = await findCourseOrFail(input.course_id);
-  const lecture = AppDataSource.getRepository(Lecture).create({
-    course,
-    createdBy: { id: adminId } as User,
-    title: input.title,
-    type: input.type as Lecture['type'],
-    url: input.url ?? null,
-    content: input.content ?? null,
-    isPublished: input.is_published ?? true,
-    sortOrder: input.sort_order ?? 0,
-  });
-  return mapLecture(await AppDataSource.getRepository(Lecture).save(lecture));
+  const repository = AppDataSource.getRepository(Lecture);
+  const isVideo = input.type === LectureType.VIDEO;
+  const normalizedUrl = normalizeOptionalText(input.url);
+  const normalizedContent = normalizeOptionalText(input.content);
+
+  if (isVideo) {
+    if (normalizedUrl) {
+      throw new AppError(400, 'Video lectures must not include an external URL');
+    }
+    if (!file) {
+      throw new AppError(400, 'Video file is required');
+    }
+  } else if (file) {
+    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+  }
+
+  let uploadedFilename: string | null = file?.filename ?? null;
+
+  try {
+    const videoMetadata = file ? await readUploadedVideoMetadata(file) : null;
+    const lecture = repository.create({
+      course,
+      createdBy: { id: adminId } as User,
+      title: input.title,
+      type: input.type as Lecture['type'],
+      url: isVideo ? null : normalizedUrl ?? null,
+      storageFilename: isVideo ? videoMetadata?.storageFilename ?? null : null,
+      fileSize: isVideo ? videoMetadata?.fileSize ?? null : null,
+      durationSeconds: isVideo ? videoMetadata?.durationSeconds ?? null : null,
+      uploadStatus: isVideo ? LectureUploadStatus.READY : LectureUploadStatus.READY,
+      content: isVideo ? null : normalizedContent ?? null,
+      isPublished: input.is_published ?? true,
+      sortOrder: input.sort_order ?? 0,
+    });
+
+    const saved = await repository.save(lecture);
+    uploadedFilename = null;
+    return mapLecture(saved);
+  } catch (error) {
+    if (uploadedFilename) {
+      await deleteStoredVideoFile(uploadedFilename);
+    }
+    throw error;
+  }
 }
 
-export async function updateLecture(id: number, input: Partial<{ course_id: number; title: string; type: string; url: string | null; content: string | null; is_published: boolean; sort_order: number }>) {
+export async function updateLecture(id: number, input: Partial<{ course_id: number; title: string; type: string; url: string | null; content: string | null; is_published: boolean; sort_order: number }>, file?: StoredVideoFile | null) {
   const repository = AppDataSource.getRepository(Lecture);
   const lecture = await repository.findOne({ where: { id }, relations: { course: { specialization: true, teacher: true }, createdBy: true } });
   if (!lecture) {
     throw new AppError(404, 'Lecture not found');
   }
 
+  const nextType = input.type ? (input.type as LectureType) : lecture.type;
+  const replacingVideo = nextType === LectureType.VIDEO && !!file;
+  const removingVideo = lecture.type === LectureType.VIDEO && nextType !== LectureType.VIDEO;
+  const oldVideoFilename = lecture.storageFilename;
+
+  if (file && nextType !== LectureType.VIDEO) {
+    throw new AppError(400, 'Video uploads are only allowed for VIDEO lectures');
+  }
+
+  const normalizedUrl = input.url === undefined ? undefined : normalizeOptionalText(input.url);
+  const normalizedContent = input.content === undefined ? undefined : normalizeOptionalText(input.content);
+
+  if (nextType === LectureType.VIDEO) {
+    if (normalizedUrl) {
+      throw new AppError(400, 'Video lectures must not include an external URL');
+    }
+    if (!file && !lecture.storageFilename) {
+      throw new AppError(400, 'Video file is required');
+    }
+  }
+
+  let uploadedFilename: string | null = file?.filename ?? null;
+
   if (input.course_id !== undefined) lecture.course = await findCourseOrFail(input.course_id);
   if (input.title !== undefined) lecture.title = input.title;
-  if (input.type !== undefined) lecture.type = input.type as Lecture['type'];
-  if (input.url !== undefined) lecture.url = input.url;
-  if (input.content !== undefined) lecture.content = input.content;
+  if (input.type !== undefined) lecture.type = nextType;
+  if (nextType === LectureType.VIDEO) {
+    lecture.url = null;
+    lecture.content = null;
+  } else {
+    if (input.url !== undefined) lecture.url = normalizedUrl ?? null;
+    if (input.content !== undefined) lecture.content = normalizedContent ?? null;
+  }
   if (input.is_published !== undefined) lecture.isPublished = input.is_published;
   if (input.sort_order !== undefined) lecture.sortOrder = input.sort_order;
 
-  return mapLecture(await repository.save(lecture));
+  if (nextType === LectureType.VIDEO) {
+    if (file) {
+      const videoMetadata = await readUploadedVideoMetadata(file);
+      lecture.storageFilename = videoMetadata.storageFilename;
+      lecture.fileSize = videoMetadata.fileSize;
+      lecture.durationSeconds = videoMetadata.durationSeconds;
+      lecture.uploadStatus = LectureUploadStatus.READY;
+    } else {
+      lecture.uploadStatus = LectureUploadStatus.READY;
+    }
+  } else {
+    lecture.storageFilename = null;
+    lecture.fileSize = null;
+    lecture.durationSeconds = null;
+    lecture.uploadStatus = LectureUploadStatus.READY;
+  }
+
+  try {
+    const saved = await repository.save(lecture);
+    uploadedFilename = null;
+    if ((replacingVideo || removingVideo) && oldVideoFilename && oldVideoFilename !== saved.storageFilename) {
+      await deleteStoredVideoFile(oldVideoFilename);
+    }
+    return mapLecture(saved);
+  } catch (error) {
+    if (uploadedFilename) {
+      await deleteStoredVideoFile(uploadedFilename);
+    }
+    throw error;
+  }
 }
 
 export async function archiveLecture(id: number) {

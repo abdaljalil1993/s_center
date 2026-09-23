@@ -427,6 +427,9 @@
 
   function initGlobalSubmitLock(scope) {
     (scope || document).querySelectorAll('form').forEach(function (form) {
+      if (form.dataset.submitLock === 'off') {
+        return;
+      }
       if (form.dataset.submitLock === '1') {
         return;
       }

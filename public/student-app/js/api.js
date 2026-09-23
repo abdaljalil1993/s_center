@@ -62,6 +62,7 @@ export async function apiRequest(path, options = {}) {
     requiresAuth = true,
     idempotent = false,
     skip401Redirect = false,
+    timeoutMs = 20000,
   } = options;
 
   const requestHeaders = {
@@ -84,11 +85,29 @@ export async function apiRequest(path, options = {}) {
     requestHeaders['Idempotency-Key'] = crypto.randomUUID();
   }
 
-  const response = await fetch(`/api${path}${toQuery(query)}`, {
-    method,
-    headers: requestHeaders,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  });
+  const controller = typeof AbortController === 'function' ? new AbortController() : null;
+  const timeoutId = controller && timeoutMs > 0
+    ? window.setTimeout(() => controller.abort(), timeoutMs)
+    : null;
+
+  let response;
+  try {
+    response = await fetch(`/api${path}${toQuery(query)}`, {
+      method,
+      headers: requestHeaders,
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+      signal: controller?.signal,
+    });
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new ApiError('انتهت مهلة الاتصال بالخادم. حاول مرة أخرى.', 408);
+    }
+    throw error;
+  } finally {
+    if (timeoutId) {
+      window.clearTimeout(timeoutId);
+    }
+  }
 
   let payload = null;
   const text = await response.text();

@@ -136,12 +136,12 @@ export const getAdminLectureById = asyncHandler(async (req: Request, res: Respon
 });
 
 export const postAdminLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await createLecture(req.user!.id, req.body);
+  const data = await createLecture(req.user!.id, req.body, req.file ?? null);
   res.status(201).json({ success: true, data });
 });
 
 export const patchAdminLecture = asyncHandler(async (req: Request, res: Response) => {
-  const data = await updateLecture(Number(req.params.id), req.body);
+  const data = await updateLecture(Number(req.params.id), req.body, req.file ?? null);
   res.status(200).json({ success: true, data });
 });
 
