@@ -85,7 +85,7 @@ app.use(express.static(path.resolve(process.cwd(), 'public')));
 app.use('/api', generalRateLimit);
 
 app.get('/', (_req, res) => {
-  res.redirect('/panel');
+  res.sendFile(path.resolve(process.cwd(), 'public', 'landing', 'index.html'));
 });
 
 app.use('/api/auth', authRoutes);

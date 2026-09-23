@@ -36,6 +36,23 @@ function maybeRedirectToLogin() {
   }
 }
 
+function toArabicError(message) {
+  const text = String(message || '').trim();
+  if (!text) {
+    return 'تعذر إكمال الطلب. حاول مرة أخرى.';
+  }
+
+  if (/insufficient balance/i.test(text)) {
+    return 'رصيد المحفظة غير كافٍ لإتمام العملية.';
+  }
+
+  if (/request failed/i.test(text)) {
+    return 'تعذر تنفيذ الطلب. حاول مرة أخرى بعد قليل.';
+  }
+
+  return text;
+}
+
 export async function apiRequest(path, options = {}) {
   const {
     method = 'GET',
@@ -84,7 +101,7 @@ export async function apiRequest(path, options = {}) {
   }
 
   if (!response.ok || payload?.success === false) {
-    const message = payload?.message || response.statusText || 'Request failed';
+    const message = toArabicError(payload?.message || response.statusText || 'Request failed');
     const error = new ApiError(message, response.status, payload?.code, payload);
 
     if (error.status === 401) {

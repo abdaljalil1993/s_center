@@ -6,6 +6,18 @@
     <h1 style="margin:0;">محاضراتي</h1>
   </div>
 </div>
+<%
+  const teacherSelectedCourse = selectedCourseId ? courses.find((course) => String(course.course_id) === String(selectedCourseId)) : null;
+  const teacherLectureBreadcrumb = [
+    { label: 'لوحة المعلّم', href: '/panel/teacher/courses' },
+    { label: 'مقرراتي', href: '/panel/teacher/courses' },
+  ];
+  if (teacherSelectedCourse) {
+    teacherLectureBreadcrumb.push({ label: teacherSelectedCourse.name });
+  }
+  teacherLectureBreadcrumb.push({ label: 'المحاضرات' });
+%>
+<%- include('../partials/breadcrumb', { items: teacherLectureBreadcrumb }) %>
 <div class="panel-toolbar">
   <form method="get" action="/panel/teacher/lectures">
     <select name="courseId">
@@ -26,6 +38,17 @@
       <tr><th>العنوان</th><th>النوع</th><th>الترتيب</th><th>الحالة</th><th>إجراءات</th></tr>
     </thead>
     <tbody>
+      <% if (!lectures.length) { %>
+        <tr>
+          <td colspan="5">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 4h16v16H4V4zm3 3v10h10V7H7zm2 2h6v2H9V9z"/></svg>
+              <h4>لا توجد محاضرات في هذه الصفحة</h4>
+              <p><%= selectedCourseId ? 'ابدأ بإضافة محاضرة جديدة لهذا الكورس.' : 'اختر كورسًا أولًا ثم اعرض المحاضرات.' %></p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% lectures.forEach((item) => { %>
         <tr>
           <td><%= item.title %></td>

@@ -8,6 +8,12 @@
   </div>
   <button class="panel-btn panel-btn-primary" data-modal-open="course-create-modal">إضافة كورس</button>
 </div>
+<%- include('../partials/breadcrumb', {
+  items: [
+    { label: 'لوحة التحكم', href: '/panel/admin/overview' },
+    { label: 'المقررات' },
+  ],
+}) %>
 <div class="panel-toolbar">
   <form method="get" action="/panel/admin/courses">
     <input type="text" name="specializationId" placeholder="التخصص" value="<%= filters.specializationId || '' %>">
@@ -31,6 +37,17 @@
       </tr>
     </thead>
     <tbody>
+      <% if (!courses.length) { %>
+        <tr>
+          <td colspan="9">
+            <section class="polish-empty">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 5h16v14H4V5zm2 2v10h12V7H6zm2 2h8v2H8V9z"/></svg>
+              <h4>لا توجد كورسات مطابقة للفلاتر الحالية</h4>
+              <p>غيّر معايير التصفية لإظهار نتائج أخرى.</p>
+            </section>
+          </td>
+        </tr>
+      <% } %>
       <% courses.forEach((item) => { %>
         <tr>
           <td><%= item.name %></td>
