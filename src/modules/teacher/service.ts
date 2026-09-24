@@ -1,6 +1,7 @@
 import { AppDataSource } from '../../config/data-source';
 import { Course } from '../../entities/Course';
 import { Lecture } from '../../entities/Lecture';
+import { Purchase } from '../../entities/Purchase';
 import { TeacherPayout } from '../../entities/TeacherPayout';
 import { LectureType, LectureUploadStatus } from '../../entities/enums';
 import { User } from '../../entities/User';
@@ -112,7 +113,8 @@ function mapPayout(payout: TeacherPayout) {
 export async function listMyCourses(teacherId: number) {
   const rows = await AppDataSource.getRepository(Course)
     .createQueryBuilder('course')
-    .leftJoin('course.purchases', 'purchase')
+    // Course ownership is live (course.teacher_id), but earnings must use purchase.teacher_id snapshots.
+    .leftJoin('course.purchases', 'purchase', 'purchase.teacher_id = :teacherId', { teacherId })
     .select('course.id', 'course_id')
     .addSelect('course.name', 'name')
     .addSelect('course.year', 'year')
@@ -121,7 +123,7 @@ export async function listMyCourses(teacherId: number) {
     .addSelect('course.isPublished', 'is_published')
     .addSelect('course.sortOrder', 'sort_order')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
-    .addSelect('COALESCE(SUM(purchase.teacherShare), 0)', 'earned')
+    .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
     .where('course.teacher_id = :teacherId', { teacherId })
     .groupBy('course.id')
     .orderBy('course.sortOrder', 'ASC')
@@ -371,7 +373,8 @@ export async function getTeacherDashboard(teacherId: number, days: number) {
     .select("DATE_FORMAT(CONVERT_TZ(purchase.created_at, '+00:00', '+03:00'), '%Y-%m-%d')", 'date')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
     .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
-    .where('course.teacher_id = :teacherId', { teacherId })
+    // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+    .where('purchase.teacher_id = :teacherId', { teacherId })
     .andWhere('purchase.created_at >= :from', { from: startDate.toISOString() })
     .andWhere('purchase.created_at <= :to', { to: endDate.toISOString() })
     .groupBy('date')
@@ -406,19 +409,21 @@ export async function getTeacherMonthlyEarnings(teacherId: number, month?: strin
   const from = new Date(Date.UTC(year, monthNumber - 1, 1));
   const to = new Date(Date.UTC(year, monthNumber, 0, 23, 59, 59, 999));
 
-  const perCourse = await AppDataSource.getRepository(Course)
-    .createQueryBuilder('course')
-    .leftJoin('course.purchases', 'purchase', 'purchase.created_at >= :from AND purchase.created_at <= :to', {
-      from: from.toISOString(),
-      to: to.toISOString(),
-    })
+  const perCourse = await AppDataSource.getRepository(Purchase)
+    .createQueryBuilder('purchase')
+    .innerJoin('purchase.course', 'course')
     .select('course.id', 'course_id')
     .addSelect('course.name', 'name')
     .addSelect('COUNT(purchase.id)', 'purchases_count')
     .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
-    .where('course.teacher_id = :teacherId', { teacherId })
+    // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+    .where('purchase.teacher_id = :teacherId', { teacherId })
+    .andWhere('purchase.created_at >= :from AND purchase.created_at <= :to', {
+      from: from.toISOString(),
+      to: to.toISOString(),
+    })
     .groupBy('course.id')
-    .orderBy('course.sort_order', 'ASC')
+    .orderBy('MAX(course.sort_order)', 'ASC')
     .addOrderBy('course.id', 'ASC')
     .getRawMany<{ course_id: string; name: string; purchases_count: string; earned: string }>();
 
@@ -444,16 +449,17 @@ export async function getTeacherMonthlyEarnings(teacherId: number, month?: strin
 
 export async function getTeacherStats(teacherId: number) {
   const [courses, payoutRow] = await Promise.all([
-    AppDataSource.getRepository(Course)
-      .createQueryBuilder('course')
-      .leftJoin('course.purchases', 'purchase')
+    AppDataSource.getRepository(Purchase)
+      .createQueryBuilder('purchase')
+      .innerJoin('purchase.course', 'course')
       .select('course.id', 'course_id')
       .addSelect('course.name', 'name')
       .addSelect('COUNT(purchase.id)', 'purchases_count')
-      .addSelect('COALESCE(SUM(purchase.teacherShare), 0)', 'earned')
-      .where('course.teacher_id = :teacherId', { teacherId })
+      .addSelect('COALESCE(SUM(purchase.teacher_share), 0)', 'earned')
+      // Earnings attribution is historical and must come from purchase.teacher_id snapshots.
+      .where('purchase.teacher_id = :teacherId', { teacherId })
       .groupBy('course.id')
-      .orderBy('course.sortOrder', 'ASC')
+      .orderBy('MAX(course.sort_order)', 'ASC')
       .addOrderBy('course.id', 'ASC')
       .getRawMany(),
     AppDataSource.getRepository(TeacherPayout)

@@ -105,7 +105,7 @@ export const postAdminCourse = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const patchAdminCourse = asyncHandler(async (req: Request, res: Response) => {
-  const data = await updateCourse(Number(req.params.id), req.body);
+  const data = await updateCourse(Number(req.params.id), req.body, req.user!.id);
   res.status(200).json({ success: true, data });
 });
 

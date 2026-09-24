@@ -174,7 +174,7 @@ export async function createCourseAction(req: Request, res: Response) {
 }
 
 export async function updateCourseAction(req: Request, res: Response) {
-  await updateCourse(Number(req.params.id), req.body);
+  await updateCourse(Number(req.params.id), req.body, req.user!.id);
   setFlash(res, 'success', 'تم تحديث الكورس بنجاح');
   return res.redirect('/panel/admin/courses');
 }

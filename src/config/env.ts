@@ -22,7 +22,7 @@ const envSchema = z.object({
   VIDEO_MAX_SIZE_MB: z.coerce.number().int().positive().default(2048),
   VIDEO_SIGNING_SECRET: z.string().min(1).optional(),
   DOWNLOAD_URL_EXPIRY_MINUTES: z.coerce.number().int().positive().default(120),
-  DOWNLOAD_TTL_DAYS: z.coerce.number().int().positive().default(90),
+  DOWNLOAD_TTL_DAYS: z.coerce.number().int().positive().default(100),
   ADMIN_USERNAME: z.string().optional(),
   ADMIN_PASSWORD: z.string().optional(),
   DEBUG_PANEL: z
