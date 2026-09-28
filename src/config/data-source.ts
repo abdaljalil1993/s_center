@@ -27,9 +27,8 @@ export const AppDataSource = new DataSource({
   synchronize: env.DB_SYNC,
   logging: false,
   charset: 'utf8mb4_unicode_ci',
- ssl: {
-    // process.cwd() تضمن الوصول للمجلد الرئيسي للمشروع دائماً سواء في التطوير أو الإنتاج
-    ca: fs.readFileSync(path.join(process.cwd(), 'ca.pem'))
+ssl: {
+    // سيقوم بقراءة محتوى الشهادة مباشرة من متغيرات البيئة بدون البحث عن ملفات
+    ca: process.env.DB_CA_CERT 
 }
-  
 });
