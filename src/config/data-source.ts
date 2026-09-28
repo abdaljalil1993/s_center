@@ -28,7 +28,7 @@ export const AppDataSource = new DataSource({
   logging: false,
   charset: 'utf8mb4_unicode_ci',
  ssl: isProduction 
-    ? { ca: fs.readFileSync(path.join(process.cwd(), 'ca.pem')) } 
+    ? { ca: process.env.DB_CA_CERT } 
     : undefined
   
 });
