@@ -196,6 +196,14 @@ export const teacherCreateSchema = z
   })
   .strict();
 
+export const adminCreateSchema = z
+  .object({
+    username: usernameSchema,
+    full_name: z.string().trim().min(2).max(120),
+    password: passwordSchema,
+  })
+  .strict();
+
 export const teacherPayoutSchema = z
   .object({
     amount: positiveMoneySchema,

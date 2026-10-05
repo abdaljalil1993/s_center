@@ -10,6 +10,7 @@ import {
 	adminIdParamSchema,
 	adjustBalanceSchema,
 	activeUserSchema,
+	adminCreateSchema,
 	adminNotificationSchema,
 	adminSalesStatsSchema,
 	adminStatsRangeSchema,
@@ -34,6 +35,7 @@ import {
 	approveTopupAction,
 	adjustUserBalanceAction,
 	coursesPage,
+	createAdminAction,
 	createCourseAction,
 	createLectureAction,
 	createSpecializationAction,
@@ -115,6 +117,7 @@ panelAdminRoutes.post('/users/:id/reset-device', validate({ params: adminIdParam
 panelAdminRoutes.post('/users/:id/reset-password', validate({ params: adminIdParamSchema, body: resetPasswordSchema }), asyncHandler(resetUserPasswordAction));
 panelAdminRoutes.post('/users/:id/adjust-balance', validate({ params: adminIdParamSchema, body: adjustBalanceSchema }), asyncHandler(adjustUserBalanceAction));
 
+panelAdminRoutes.post('/admins', validate({ body: adminCreateSchema }), asyncHandler(createAdminAction));
 panelAdminRoutes.get('/teachers', asyncHandler(teachersPage));
 panelAdminRoutes.post('/teachers', validate({ body: teacherCreateSchema }), asyncHandler(createTeacherAction));
 panelAdminRoutes.post('/teachers/:id/payouts', validate({ params: adminIdParamSchema, body: teacherPayoutSchema }), asyncHandler(teacherPayoutAction));

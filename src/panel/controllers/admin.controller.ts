@@ -16,6 +16,7 @@ import {
   createNotifications,
   createSpecialization,
   createTeacher,
+  createAdmin,
   adjustBalance,
   listCourses,
   listLectures,
@@ -327,6 +328,12 @@ export async function createTeacherAction(req: Request, res: Response) {
   await createTeacher(req.body);
   setFlash(res, 'success', 'تم إنشاء المدرس');
   return res.redirect('/panel/admin/teachers');
+}
+
+export async function createAdminAction(req: Request, res: Response) {
+  await createAdmin(req.body);
+  setFlash(res, 'success', 'تم إنشاء المدير الجديد');
+  return res.redirect('/panel/admin/users');
 }
 
 export async function teacherPayoutAction(req: Request, res: Response) {
