@@ -72,11 +72,13 @@ async function main() {
   await AppDataSource.destroy();
 }
 
-main().catch(async (error) => {
-  console.error('Failed to seed admin');
-  console.error(error instanceof Error ? error.message : error);
-  if (AppDataSource.isInitialized) {
-    await AppDataSource.destroy();
-  }
-  process.exit(1);
-});
+if (require.main === module) {
+  main().catch(async (error) => {
+    console.error('Failed to seed admin');
+    console.error(error instanceof Error ? error.message : error);
+    if (AppDataSource.isInitialized) {
+      await AppDataSource.destroy();
+    }
+    process.exit(1);
+  });
+}
