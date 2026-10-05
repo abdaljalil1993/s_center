@@ -288,7 +288,26 @@ export async function usersPage(req: Request, res: Response) {
 }
 
 export async function toggleUserActiveAction(req: Request, res: Response) {
-  await setUserActive(Number(req.params.id), req.body.is_active === 'true');
+  const targetUserId = Number(req.params.id);
+  const targetUser = await AppDataSource.getRepository(User).findOne({ where: { id: targetUserId } });
+
+  if (!targetUser) {
+    setFlash(res, 'error', 'المستخدم غير موجود');
+    return res.redirect('/panel/admin/users');
+  }
+
+  if (targetUser.id === req.user!.id) {
+    setFlash(res, 'error', 'لا يمكنك إيقاف حسابك الشخصي');
+    return res.redirect('/panel/admin/users');
+  }
+
+  if (targetUser.role === UserRole.ADMIN) {
+    setFlash(res, 'error', 'لا يمكن إيقاف حساب مدير');
+    return res.redirect('/panel/admin/users');
+  }
+
+  const nextIsActive = req.body.is_active === true || req.body.is_active === 'true' || req.body.is_active === 1 || req.body.is_active === '1';
+  await setUserActive(targetUserId, nextIsActive);
   setFlash(res, 'success', 'تم تحديث حالة المستخدم');
   return res.redirect('/panel/admin/users');
 }

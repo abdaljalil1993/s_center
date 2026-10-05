@@ -121,7 +121,18 @@ export const rejectTopupSchema = z
 
 export const activeUserSchema = z
   .object({
-    is_active: z.boolean(),
+    is_active: z.preprocess((value) => {
+      if (typeof value === 'string') {
+        const normalized = value.trim().toLowerCase();
+        if (normalized === 'true' || normalized === '1') {
+          return true;
+        }
+        if (normalized === 'false' || normalized === '0') {
+          return false;
+        }
+      }
+      return value;
+    }, z.boolean()),
   })
   .strict();
 
