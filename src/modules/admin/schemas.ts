@@ -207,6 +207,15 @@ export const teacherCreateSchema = z
   })
   .strict();
 
+export const studentCreateSchema = z
+  .object({
+    username: usernameSchema,
+    full_name: z.string().trim().min(2).max(120),
+    password: passwordSchema,
+    device_id: z.string().trim().max(255).optional().nullable(),
+  })
+  .strict();
+
 export const adminCreateSchema = z
   .object({
     username: usernameSchema,
