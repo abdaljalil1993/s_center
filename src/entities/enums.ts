@@ -30,3 +30,8 @@ export enum TransactionType {
   TOPUP = 'TOPUP',
   PURCHASE = 'PURCHASE',
 }
+
+export enum PurchaseSource {
+  PURCHASED = 'PURCHASED',
+  GRANTED = 'GRANTED',
+}
