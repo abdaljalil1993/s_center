@@ -140,9 +140,10 @@ export async function settingsPage(req: Request, res: Response) {
 
 export async function updateMaintenanceAction(req: Request, res: Response) {
   const enabled = String(req.body.enabled) === 'true';
+  const firstLectureFree = String(req.body.first_lecture_free) === 'true';
   const message = typeof req.body.message === 'string' ? req.body.message.trim() : 'التطبيق قيد الصيانة حاليًا';
 
-  await setMaintenanceStatus({ enabled, message: enabled ? message : '' });
+  await setMaintenanceStatus({ enabled, first_lecture_free: firstLectureFree, message: enabled ? message : '' });
   setFlash(res, 'success', enabled ? 'تم تفعيل وضع الصيانة' : 'تم إلغاء وضع الصيانة');
   return res.redirect('/panel/admin/settings');
 }

@@ -352,7 +352,7 @@ export const getAdminMaintenanceStatus = asyncHandler(async (_req: Request, res:
 });
 
 export const patchAdminMaintenanceStatus = asyncHandler(async (req: Request, res: Response) => {
-  const data = await setMaintenanceStatus({ enabled: req.body.enabled, message: req.body.message });
+  const data = await setMaintenanceStatus({ enabled: req.body.enabled, first_lecture_free: req.body.first_lecture_free, message: req.body.message });
   res.status(200).json({ success: true, data });
 });
 

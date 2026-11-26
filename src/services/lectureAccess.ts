@@ -3,6 +3,7 @@ import type { EntityManager } from 'typeorm';
 import { Lecture } from '../entities/Lecture';
 import { LectureGrant } from '../entities/LectureGrant';
 import { Purchase } from '../entities/Purchase';
+import { AppSetting } from '../entities/AppSetting';
 
 export async function findStudentAccessibleLectureIds(
   manager: EntityManager,
@@ -33,7 +34,17 @@ export async function findStudentAccessibleLectureIds(
     .andWhere('(purchase.id IS NOT NULL OR lecture_grant.id IS NOT NULL)')
     .getRawMany<{ lecture_id: number | string }>();
 
-  return new Set(rows.map((row) => Number(row.lecture_id)));
+  const accessibleIds = new Set(rows.map((row) => Number(row.lecture_id)));
+  if (await isFirstLectureFreeEnabled(manager)) {
+    const firstLecture = await manager.getRepository(Lecture).findOne({
+      where: { course: { id: input.courseId }, isPublished: true },
+      order: { sortOrder: 'ASC', id: 'ASC' },
+    });
+    if (firstLecture && input.lectureIds.includes(firstLecture.id)) {
+      accessibleIds.add(firstLecture.id);
+    }
+  }
+  return accessibleIds;
 }
 
 export async function hasStudentLectureAccess(
@@ -56,4 +67,20 @@ export async function hasStudentCourseAccess(
   return manager.getRepository(Purchase).exist({
     where: { user: { id: input.userId }, course: { id: input.courseId } },
   });
+}
+
+export async function isFirstLectureFreeEnabled(manager: EntityManager) {
+  const setting = await manager.getRepository(AppSetting).findOne({
+    where: { key: 'first_lecture_free_all_courses' },
+  });
+  return setting ? String(setting.value ?? '0') === '1' : true;
+}
+
+export async function isFirstPublishedLectureOfCourse(manager: EntityManager, courseId: number, lectureId: number) {
+  const lecture = await manager.getRepository(Lecture).findOne({
+    where: { course: { id: courseId }, isPublished: true },
+    relations: { course: true },
+    order: { sortOrder: 'ASC', id: 'ASC' },
+  });
+  return Boolean(lecture && lecture.id === lectureId);
 }

@@ -23,6 +23,13 @@
         <label>رسالة الصيانة</label>
         <textarea name="message" rows="4" placeholder="التطبيق قيد الصيانة حاليًا"><%= maintenance.message || 'التطبيق قيد الصيانة حاليًا' %></textarea>
       </div>
+      <div>
+        <label>المحاضرة الأولى لكل كورس</label>
+        <select name="first_lecture_free" required>
+          <option value="false" <%= maintenance.first_lecture_free ? '' : 'selected' %>>مقفلة حسب نظام الدفع أو المنحة</option>
+          <option value="true" <%= maintenance.first_lecture_free ? 'selected' : '' %>>مجانية للجميع لأول محاضرة منشورة في كل كورس</option>
+        </select>
+      </div>
     </div>
     <div class="panel-form-actions">
       <button type="submit" class="panel-btn panel-btn-primary">حفظ</button>

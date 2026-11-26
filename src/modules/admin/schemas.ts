@@ -316,6 +316,7 @@ export const teacherPayoutSchema = z
 export const maintenanceModeSchema = z
   .object({
     enabled: z.boolean(),
+    first_lecture_free: z.boolean().optional(),
     message: z.string().trim().max(500).optional().nullable(),
   })
   .strict();

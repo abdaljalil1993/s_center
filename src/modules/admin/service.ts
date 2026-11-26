@@ -1854,17 +1854,21 @@ export async function resetPassword(userId: number, newPassword: string) {
 
 export async function getMaintenanceStatus() {
   const repository = AppDataSource.getRepository(AppSetting);
-  const maintenanceKey = await repository.findOne({ where: { key: 'maintenance_mode' } });
-  const messageKey = await repository.findOne({ where: { key: 'maintenance_message' } });
+  const [maintenanceKey, messageKey, firstLectureFreeKey] = await Promise.all([
+    repository.findOne({ where: { key: 'maintenance_mode' } }),
+    repository.findOne({ where: { key: 'maintenance_message' } }),
+    repository.findOne({ where: { key: 'first_lecture_free_all_courses' } }),
+  ]);
 
   return {
     maintenance: maintenanceKey ? String(maintenanceKey.value ?? '0') === '1' : false,
+    first_lecture_free: firstLectureFreeKey ? String(firstLectureFreeKey.value ?? '0') === '1' : true,
     message: messageKey?.value ?? 'التطبيق قيد الصيانة حاليًا',
     updated_at: maintenanceKey?.updatedAt ?? null,
   };
 }
 
-export async function setMaintenanceStatus(input: { enabled: boolean; message?: string | null }) {
+export async function setMaintenanceStatus(input: { enabled: boolean; message?: string | null; first_lecture_free?: boolean }) {
   const repository = AppDataSource.getRepository(AppSetting);
 
   const maintenanceMode = await repository.findOne({ where: { key: 'maintenance_mode' } });
@@ -1894,6 +1898,19 @@ export async function setMaintenanceStatus(input: { enabled: boolean; message?: 
         value: finalMessage,
       }),
     );
+  }
+
+  if (input.first_lecture_free !== undefined) {
+    const firstLectureFree = await repository.findOne({ where: { key: 'first_lecture_free_all_courses' } });
+    if (firstLectureFree) {
+      firstLectureFree.value = input.first_lecture_free ? '1' : '0';
+      await repository.save(firstLectureFree);
+    } else {
+      await repository.save(repository.create({
+        key: 'first_lecture_free_all_courses',
+        value: input.first_lecture_free ? '1' : '0',
+      }));
+    }
   }
 
   return getMaintenanceStatus();
