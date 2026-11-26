@@ -24,7 +24,7 @@ export default defineConfig({
     cwd: projectRoot,
     url: process.env.E2E_BASE_URL || 'http://127.0.0.1:3000',
     timeout: 180_000,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     env: {
       ...process.env,
       NODE_ENV: 'test',

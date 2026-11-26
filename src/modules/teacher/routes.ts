@@ -35,6 +35,7 @@ import {
   patchTeacherCourse,
   postTeacherLecture,
   putTeacherLectureOrder,
+  getReusableTeacherLectures,
 } from './controller';
 
 export const teacherRoutes = Router();
@@ -57,3 +58,5 @@ teacherRoutes.delete('/lectures/:id', validate({ params: teacherLectureIdParamSc
 teacherRoutes.get('/stats', validate({ query: teacherStatsQuerySchema }), getTeacherStatsController);
 teacherRoutes.get('/earnings', validate({ query: teacherEarningsQuerySchema }), getTeacherEarnings);
 teacherRoutes.get('/payouts', getTeacherPayouts);
+teacherRoutes.get('/lectures/reusable', getReusableTeacherLectures);
+teacherRoutes.get('/lectures/published', getTeacherCourseLectures);

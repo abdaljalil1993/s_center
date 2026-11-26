@@ -65,6 +65,8 @@ import {
   updateCourse,
   updateLecture,
   updateSpecialization,
+  deleteStudentByAdmin,
+  deleteTeacherByAdmin,
 } from './service';
 import { paginateItems } from '../../utils/pagination';
 import { executeIdempotent } from '../../services/idempotency';
@@ -437,5 +439,15 @@ export const getAdminStatsBySpecialization = asyncHandler(async (req: Request, r
 
 export const getAdminStatsTeachers = asyncHandler(async (req: Request, res: Response) => {
   const data = await teachersStats(req.query.from as string | undefined, req.query.to as string | undefined);
+  res.status(200).json({ success: true, data });
+});
+
+export const deleteAdminUser = asyncHandler(async (req: Request, res: Response) => {
+  const data = await deleteStudentByAdmin(Number(req.params.id));
+  res.status(200).json({ success: true, data });
+});
+
+export const deleteAdminTeacher = asyncHandler(async (req: Request, res: Response) => {
+  const data = await deleteTeacherByAdmin(Number(req.params.id));
   res.status(200).json({ success: true, data });
 });

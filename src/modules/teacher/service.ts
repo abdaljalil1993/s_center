@@ -8,7 +8,7 @@ import { LectureType, LectureUploadStatus, PurchaseSource } from '../../entities
 import { User } from '../../entities/User';
 import { AppError } from '../../utils/AppError';
 import { centsToMoney, toCents } from '../../utils/money';
-import { deleteStoredVideoFile, detectVideoDurationSeconds, type StoredVideoFile } from '../../services/media';
+import { copyStoredVideoFile, deleteStoredVideoFile, detectVideoDurationSeconds, type StoredVideoFile } from '../../services/media';
 
 function toNumber(value: unknown): number {
   if (typeof value === 'number') {
@@ -71,6 +71,7 @@ function mapLecture(lecture: Lecture) {
   return {
     id: lecture.id,
     course_id: lecture.course.id,
+    course_name: lecture.course.name,
     title: lecture.title,
     type: lecture.type,
     url: lecture.type === LectureType.VIDEO ? null : lecture.url,
@@ -178,11 +179,57 @@ export async function listCourseLectures(teacherId: number, courseId: number) {
 export async function createLectureForTeacher(
   teacherId: number,
   courseId: number,
-  input: { title: string; type: LectureType; url?: string | null; content?: string | null; sort_order?: number },
+  input: { title?: string; type?: LectureType; url?: string | null; content?: string | null; sort_order?: number; source_lecture_id?: number },
   file?: StoredVideoFile | null,
 ) {
   const course = await assertOwnedCourse(courseId, teacherId);
   const repository = AppDataSource.getRepository(Lecture);
+
+  if (input.source_lecture_id !== undefined) {
+    const source = await repository.findOne({
+      where: { id: input.source_lecture_id, isPublished: true, course: { teacher: { id: teacherId } } },
+      relations: { course: true, createdBy: true },
+    });
+    if (!source) {
+      throw new AppError(404, 'المحاضرة المصدر غير موجودة أو غير منشورة أو ليست ضمن كورس مخصص لك');
+    }
+
+    let copiedStorageFilename = source.storageFilename;
+    if (source.storageFilename) {
+      try {
+        copiedStorageFilename = await copyStoredVideoFile(source.storageFilename);
+      } catch (error) {
+        throw new AppError(500, 'تعذر نسخ ملف المحاضرة المخزن');
+      }
+    }
+
+    try {
+      const lecture = repository.create({
+        course,
+        createdBy: { id: teacherId } as User,
+        title: input.title || source.title,
+        type: source.type,
+        url: source.url,
+        storageFilename: copiedStorageFilename,
+        fileSize: source.fileSize,
+        durationSeconds: source.durationSeconds,
+        uploadStatus: source.uploadStatus,
+        content: source.content,
+        isPublished: true,
+        sortOrder: input.sort_order ?? source.sortOrder,
+      });
+      return mapLecture(await repository.save(lecture));
+    } catch (error) {
+      if (copiedStorageFilename && copiedStorageFilename !== source.storageFilename) {
+        await deleteStoredVideoFile(copiedStorageFilename);
+      }
+      throw error;
+    }
+  }
+
+  if (!input.type) {
+    throw new AppError(400, 'نوع المحاضرة مطلوب عند عدم اختيار محاضرة مصدر');
+  }
   const isVideo = input.type === LectureType.VIDEO;
   const isPdf = input.type === LectureType.PDF;
   const uploadedExtension = file ? path.extname(file.originalname || '').toLowerCase() : '';
@@ -190,28 +237,17 @@ export async function createLectureForTeacher(
   const normalizedContent = normalizeOptionalText(input.content);
 
   if (isVideo) {
-    if (normalizedUrl) {
-      throw new AppError(400, 'Video lectures must not include an external URL');
-    }
-    if (!file) {
-      throw new AppError(400, 'Video file is required');
-    }
-    if (uploadedExtension === '.pdf') {
-      throw new AppError(400, 'PDF files are not valid for VIDEO lectures');
-    }
+    if (normalizedUrl) throw new AppError(400, 'Video lectures must not include an external URL');
+    if (!file) throw new AppError(400, 'Video file is required');
+    if (uploadedExtension === '.pdf') throw new AppError(400, 'PDF files are not valid for VIDEO lectures');
   } else if (isPdf) {
-    if (file && uploadedExtension !== '.pdf') {
-      throw new AppError(400, 'PDF lectures must upload a PDF file');
-    }
-    if (!file && !normalizedUrl) {
-      throw new AppError(400, 'PDF lecture requires a PDF file or URL');
-    }
+    if (file && uploadedExtension !== '.pdf') throw new AppError(400, 'PDF lectures must upload a PDF file');
+    if (!file && !normalizedUrl) throw new AppError(400, 'PDF lecture requires a PDF file or URL');
   } else if (file) {
     throw new AppError(400, 'File uploads are only allowed for VIDEO or PDF lectures');
   }
 
   let uploadedFilename: string | null = file?.filename ?? null;
-
   try {
     const videoMetadata = file ? await readUploadedVideoMetadata(file) : null;
     const lecture = repository.create({
@@ -228,14 +264,11 @@ export async function createLectureForTeacher(
       isPublished: true,
       sortOrder: input.sort_order ?? 0,
     });
-
     const saved = await repository.save(lecture);
     uploadedFilename = null;
     return mapLecture(saved);
   } catch (error) {
-    if (uploadedFilename) {
-      await deleteStoredVideoFile(uploadedFilename);
-    }
+    if (uploadedFilename) await deleteStoredVideoFile(uploadedFilename);
     throw error;
   }
 }
@@ -607,4 +640,55 @@ export async function listTeacherPayouts(teacherId: number) {
   });
 
   return payouts.map(mapPayout);
+}
+
+export async function listReusableTeacherLectures(teacherId: number) {
+  const lectures = await AppDataSource.getRepository(Lecture).find({
+    where: { isPublished: true, course: { teacher: { id: teacherId } } },
+    relations: { course: { specialization: true, teacher: true }, createdBy: true },
+    order: { createdAt: 'DESC', id: 'DESC' },
+  });
+
+  return lectures.map(mapLecture);
+}
+
+export async function copyTeacherLecture(teacherId: number, lectureId: number) {
+  const repository = AppDataSource.getRepository(Lecture);
+  const lecture = await assertOwnedLecture(lectureId, teacherId);
+  const videoFile = lecture.storageFilename;
+  const isVideo = lecture.type === LectureType.VIDEO;
+  const isPdf = lecture.type === LectureType.PDF;
+
+  let newLecture: Lecture;
+  if (isVideo || isPdf) {
+    const fileCopy = videoFile ? await copyStoredVideoFile(videoFile) : null;
+    newLecture = repository.create({
+      course: lecture.course,
+      createdBy: { id: teacherId } as User,
+      title: `${lecture.title} - نسخة`,
+      type: lecture.type,
+      url: isVideo ? null : lecture.url,
+      storageFilename: fileCopy ?? null,
+      fileSize: fileCopy ? String(lecture.fileSize) : null,
+      durationSeconds: isVideo ? lecture.durationSeconds : null,
+      uploadStatus: LectureUploadStatus.READY,
+      content: isPdf ? null : lecture.content,
+      isPublished: false,
+      sortOrder: lecture.sortOrder,
+    });
+  } else {
+    newLecture = repository.create({
+      course: lecture.course,
+      createdBy: { id: teacherId } as User,
+      title: `${lecture.title} - نسخة`,
+      type: lecture.type,
+      url: lecture.url,
+      content: lecture.content,
+      isPublished: false,
+      sortOrder: lecture.sortOrder,
+    });
+  }
+
+  const saved = await repository.save(newLecture);
+  return mapLecture(saved);
 }

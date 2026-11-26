@@ -2058,3 +2058,47 @@ export async function teachersStats(from?: string, to?: string) {
 export async function teacherPayoutHistory(teacherId: number) {
   return listTeacherPayouts(teacherId);
 }
+
+export async function deleteStudentByAdmin(userId: number) {
+  const repository = AppDataSource.getRepository(User);
+  const student = await repository.findOne({ where: { id: userId, role: UserRole.STUDENT } });
+  if (!student) {
+    throw new AppError(404, 'Student not found');
+  }
+
+  await AppDataSource.transaction(async (manager) => {
+    await manager.getRepository(LectureGrant).delete({ user: { id: userId } });
+    await manager.getRepository(Purchase).delete({ user: { id: userId } });
+    await manager.getRepository(Transaction).delete({ user: { id: userId } });
+    await manager.getRepository(TopupRequest).delete({ user: { id: userId } });
+    await manager.getRepository(Notification).delete({ user: { id: userId } });
+    await manager.getRepository(User).remove(student);
+  });
+
+  return mapUser(student);
+}
+
+export async function deleteTeacherByAdmin(teacherId: number) {
+  const repository = AppDataSource.getRepository(User);
+  const teacher = await repository.findOne({ where: { id: teacherId, role: UserRole.TEACHER } });
+  if (!teacher) throw new AppError(404, 'Teacher not found');
+
+  await AppDataSource.transaction(async (manager) => {
+    const courses = await manager.getRepository(Course).find({ where: { teacher: { id: teacherId } } });
+    for (const course of courses) {
+      const lectures = await manager.getRepository(Lecture).find({ where: { course: { id: course.id } } });
+      for (const lecture of lectures) {
+        if (lecture.storageFilename) await deleteStoredVideoFile(lecture.storageFilename);
+      }
+      await manager.getRepository(Lecture).remove(lectures);
+      const purchases = await manager.getRepository(Purchase).find({ where: { course: { id: course.id } } });
+      await manager.getRepository(Purchase).remove(purchases);
+      await manager.getRepository(Course).remove(course);
+    }
+    const payouts = await manager.getRepository(TeacherPayout).find({ where: { teacher: { id: teacherId } } });
+    await manager.getRepository(TeacherPayout).remove(payouts);
+    await manager.getRepository(User).remove(teacher);
+  });
+
+  return mapUser(teacher);
+}

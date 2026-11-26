@@ -50,6 +50,8 @@ import {
   grantLecturesToUser,
   revokeCourseGrant,
   revokeLectureGrant,
+  deleteStudentByAdmin,
+  deleteTeacherByAdmin,
 } from '../../modules/admin/service';
 import {
   approveCourseSwapRequest,
@@ -634,4 +636,16 @@ export async function sendNotificationAction(req: Request, res: Response) {
 
 export async function statsRedirect(_req: Request, res: Response) {
   return res.redirect('/panel/admin/overview');
+}
+
+export async function deleteUserAction(req: Request, res: Response) {
+  await deleteStudentByAdmin(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف الطالب وكل بياناته المرتبطة');
+  return res.redirect('/panel/admin/users');
+}
+
+export async function deleteTeacherAction(req: Request, res: Response) {
+  await deleteTeacherByAdmin(Number(req.params.id));
+  setFlash(res, 'success', 'تم حذف المدرس وكافة الكورسات والمحاضرات المرتبطة به');
+  return res.redirect('/panel/admin/teachers');
 }

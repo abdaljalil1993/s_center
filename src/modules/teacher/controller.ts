@@ -18,6 +18,7 @@ import {
   setTeacherLecturePublished,
   updateTeacherCourseDescription,
   updateTeacherLecture,
+  listReusableTeacherLectures,
 } from './service';
 import { paginateItems } from '../../utils/pagination';
 
@@ -99,5 +100,10 @@ export const getTeacherPayouts = asyncHandler(async (req: Request, res: Response
 
 export const getTeacherEarnings = asyncHandler(async (req: Request, res: Response) => {
   const data = await getTeacherMonthlyEarnings(req.user!.id, req.query.month as string | undefined);
+  res.status(200).json({ success: true, data });
+});
+
+export const getReusableTeacherLectures = asyncHandler(async (req: Request, res: Response) => {
+  const data = await listReusableTeacherLectures(req.user!.id);
   res.status(200).json({ success: true, data });
 });

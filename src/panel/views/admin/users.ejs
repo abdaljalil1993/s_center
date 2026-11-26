@@ -72,7 +72,13 @@
                 <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-grant-lecture-modal-<%= item.id %>">منح محاضرة مجانية</button>
                 <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-edit-profile-modal" data-modal-action="/panel/admin/users/<%= item.id %>/profile" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل اسم الطالب</button>
                 <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-reset-password-modal" data-modal-action="/panel/admin/users/<%= item.id %>/reset-password" data-modal-fill='<%= JSON.stringify(item) %>'>إعادة تعيين كلمة المرور</button>
-                <button class="panel-btn panel-btn-secondary" style="width:100%;" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
+                <button class="panel-btn panel-btn-secondary" style="width:100%;margin-bottom:6px;" data-modal-open="user-adjust-balance-modal" data-modal-action="/panel/admin/users/<%= item.id %>/adjust-balance" data-modal-fill='<%= JSON.stringify(item) %>'>تعديل الرصيد</button>
+                <% if (item.role === 'STUDENT') { %>
+                <form method="post" action="/panel/admin/users/<%= item.id %>/delete" style="display:block;">
+                  <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+                  <button class="panel-btn panel-btn-danger" style="width:100%;" type="submit" data-confirm="هل تريد حذف هذا الطالب نهائياً وكل بياناته؟">حذف الطالب</button>
+                </form>
+                <% } %>
               </div>
             </details>
           </td>

@@ -364,3 +364,13 @@ export async function streamStoredVideoResponse(
     stream.pipe(res);
   });
 }
+
+export async function copyStoredVideoFile(filename: string) {
+  const sourcePath = resolveVideoFilePath(filename);
+  const extension = path.extname(filename).toLowerCase();
+  const copiedFilename = `${crypto.randomUUID()}${extension}`;
+  const destinationPath = resolveVideoFilePath(copiedFilename);
+  await ensureVideoStorageDirectory();
+  await fs.promises.copyFile(sourcePath, destinationPath);
+  return copiedFilename;
+}

@@ -77,11 +77,20 @@
     <form method="post" action="/panel/teacher/courses/<%= selectedCourseId || 0 %>/lectures?csrf_token=<%= csrfToken %>" class="panel-form" enctype="multipart/form-data">
       <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
       <div class="panel-form-grid">
-        <div><label>العنوان</label><input name="title" required></div>
+        <div><label>نسخ محاضرة منشورة مسبقاً</label>
+          <select name="source_lecture_id" id="teacher-source-lecture">
+            <option value="">محاضرة جديدة</option>
+            <% reusableLectures.forEach((source) => { %>
+              <option value="<%= source.id %>"><%= source.title %> — <%= source.course_name || 'بدون كورس' %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div><label>العنوان</label><input name="title" id="teacher-lecture-title"></div>
         <div><label>النوع</label>
           <select name="type" data-lecture-type><option value="VIDEO">VIDEO</option><option value="PDF">PDF</option><option value="TEXT">TEXT</option></select>
         </div>
         <div data-field="upload"><label>ملف المحاضرة</label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,video/x-matroska,application/pdf"></div>
+        <div data-field="url"><label>رابط المحاضرة (اختياري)</label><input name="url" type="url" placeholder="https://..."></div>
         <div data-field="content"><label>المحتوى</label><textarea name="content"></textarea></div>
         <div><label>الترتيب</label><input name="sort_order" type="number" min="0" value="0"></div>
       </div>
@@ -101,6 +110,7 @@
           <select name="type" data-fill="type" data-lecture-type><option value="VIDEO">VIDEO</option><option value="PDF">PDF</option><option value="TEXT">TEXT</option></select>
         </div>
         <div data-field="upload"><label>استبدال ملف المحاضرة</label><input type="file" name="video" accept="video/mp4,video/webm,video/quicktime,video/x-matroska,application/pdf"></div>
+        <div data-field="url"><label>رابط المحاضرة (اختياري)</label><input name="url" type="url" data-fill="url" placeholder="https://..."></div>
         <div data-field="content"><label>المحتوى</label><textarea name="content" data-fill="content"></textarea></div>
         <div><label>الترتيب</label><input name="sort_order" type="number" min="0" data-fill="sort_order"></div>
       </div>
@@ -119,17 +129,35 @@
       }
 
       const uploadField = form.querySelector('[data-field="upload"]');
+      const urlField = form.querySelector('[data-field="url"]');
       const contentField = form.querySelector('[data-field="content"]');
-      const contentInput = contentField ? contentField.querySelector('textarea[name="content"]') : null;
+      const sourceSelect = form.querySelector('#teacher-source-lecture');
+      const titleInput = form.querySelector('#teacher-lecture-title');
+      const isSourceMode = sourceSelect && sourceSelect.value;
+
       const currentType = typeSelect.value;
+
+      if (isSourceMode) {
+        if (uploadField) uploadField.style.display = 'none';
+        if (urlField) urlField.style.display = 'none';
+        if (contentField) contentField.style.display = 'none';
+        if (titleInput) titleInput.required = false;
+        return;
+      }
 
       if (uploadField) {
         uploadField.style.display = currentType === 'TEXT' ? 'none' : '';
       }
 
+      if (urlField) {
+        urlField.style.display = currentType === 'TEXT' || currentType === 'PDF' ? '' : 'none';
+      }
+
       if (contentField) {
         contentField.style.display = currentType === 'TEXT' ? '' : 'none';
       }
+
+      const contentInput = contentField ? contentField.querySelector('textarea[name="content"]') : null;
 
       if (currentType !== 'TEXT' && contentInput) {
         contentInput.value = '';
@@ -145,6 +173,11 @@
       const select = form.querySelector('[data-lecture-type]');
       if (select) {
         select.addEventListener('change', () => toggleFields(form));
+      }
+
+      const sourceSelect = form.querySelector('#teacher-source-lecture');
+      if (sourceSelect) {
+        sourceSelect.addEventListener('change', () => toggleFields(form));
       }
 
       modal.addEventListener('click', () => {

@@ -46,6 +46,10 @@
             <button class="panel-btn panel-btn-secondary" data-modal-open="teacher-edit-modal" data-modal-action="/panel/admin/teachers/<%= item.teacher_id %>" data-modal-fill='<%= JSON.stringify({ username: item.username, full_name: item.full_name, is_active: item.is_active }) %>'>تعديل</button>
             <a class="panel-btn panel-btn-secondary" href="/panel/admin/teachers/<%= item.teacher_id %>/payouts">سجل الدفعات</a>
             <button class="panel-btn panel-btn-primary" data-modal-open="teacher-payout-modal" data-modal-action="/panel/admin/teachers/<%= item.teacher_id %>/payouts" data-modal-fill='<%= JSON.stringify(item) %>'>إضافة دفعة</button>
+            <form method="post" action="/panel/admin/teachers/<%= item.teacher_id %>/delete" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="<%= csrfToken %>">
+              <button class="panel-btn panel-btn-danger" type="submit" data-confirm="هل تريد حذف المدرس وكافة الكورسات والمحاضرات والبيانات المرتبطة به؟">حذف المدرس</button>
+            </form>
           </td>
         </tr>
       <% }) %>

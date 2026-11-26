@@ -101,6 +101,8 @@ import {
   rejectAdminTopupRequest,
   resetAdminUserDevice,
   sendAdminNotification,
+  deleteAdminUser,
+  deleteAdminTeacher,
 } from './controller';
 
 export const adminRoutes = Router();
@@ -177,3 +179,6 @@ adminRoutes.get('/stats/sales', validate({ query: adminSalesStatsSchema }), getA
 adminRoutes.get('/stats/top-courses', validate({ query: adminTopCoursesStatsSchema }), getAdminStatsTopCourses);
 adminRoutes.get('/stats/by-specialization', validate({ query: adminStatsRangeSchema }), getAdminStatsBySpecialization);
 adminRoutes.get('/stats/teachers', validate({ query: adminTeachersStatsSchema }), getAdminStatsTeachers);
+
+adminRoutes.delete('/users/:id', validate({ params: adminIdParamSchema }), deleteAdminUser);
+adminRoutes.delete('/teachers/:id', validate({ params: adminIdParamSchema }), deleteAdminTeacher);

@@ -2,7 +2,7 @@ import type { Request, Response } from 'express';
 
 import { AppError } from '../../utils/AppError';
 import type { StoredVideoFile } from '../../services/media';
-import { archiveTeacherLecture, createLectureForTeacher, deleteTeacherLecturePermanently, getTeacherStats, listCourseLectures, listMyCourses, listTeacherPayouts, listTeacherPurchases, updateTeacherLecture } from '../../modules/teacher/service';
+import { archiveTeacherLecture, createLectureForTeacher, deleteTeacherLecturePermanently, getTeacherStats, listCourseLectures, listMyCourses, listReusableTeacherLectures, listTeacherPayouts, listTeacherPurchases, updateTeacherLecture } from '../../modules/teacher/service';
 import { setFlash } from '../middlewares/flash';
 
 async function loadTeacherCommon(teacherId: number) {
@@ -30,6 +30,7 @@ export async function lecturesPage(req: Request, res: Response) {
   const courses = await listMyCourses(req.user!.id);
   const selectedCourseId = req.query.courseId ? Number(req.query.courseId) : undefined;
   const lectures = selectedCourseId ? await listCourseLectures(req.user!.id, selectedCourseId) : [];
+  const reusableLectures = await listReusableTeacherLectures(req.user!.id);
   return res.render('teacher/lectures', {
     title: 'محاضراتي',
     currentUser: req.user,
@@ -38,6 +39,7 @@ export async function lecturesPage(req: Request, res: Response) {
     courses,
     selectedCourseId,
     lectures,
+    reusableLectures,
   });
 }
 
